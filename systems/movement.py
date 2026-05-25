@@ -1,29 +1,32 @@
 import pygame
 
 from core.constants import *
-from world.terrain import *
 
-DIRECTION_VECTORS = {
-    "up": (0, -1),
-    "down": (0, 1),
-    "left": (-1, 0),
-    "right": (1, 0),
+DIRECTION_KEYS = {
+    pygame.K_w: NORTH,
+    pygame.K_d: EAST,
+    pygame.K_s: SOUTH,
+    pygame.K_a: WEST,
 }
 
-def get_input_direction():
+CARDINAL_VECTORS = {
+    NORTH: (0, -1),
+    EAST: (1, 0),
+    SOUTH: (0, 1),
+    WEST: (-1, 0),
+}
+
+def get_pressed_direction():
 
     keys = pygame.key.get_pressed()
 
-    if keys[pygame.K_w]:
-        return "up"
+    for key, direction in DIRECTION_KEYS.items():
 
-    if keys[pygame.K_s]:
-        return "down"
-
-    if keys[pygame.K_a]:
-        return "left"
-
-    if keys[pygame.K_d]:
-        return "right"
+        if keys[key]:
+            return direction
 
     return None
+
+def opposite_direction(direction):
+
+    return (direction + 2) % 4
