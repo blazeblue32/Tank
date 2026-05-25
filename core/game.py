@@ -5,6 +5,7 @@ from core.camera import Camera
 
 from world.tilemap import TileMap
 from entities.tank import Tank
+from entities.enemy_tank import EnemyTank
 from rendering.renderer import Renderer
 from systems.movement import update_input_state
 
@@ -35,9 +36,26 @@ class Game:
         # =================================================
         # PLAYER
         # =================================================
-
+     
         self.player = Tank(self.tilemap)
 
+        # =================================================
+        # ENEMIES
+        # =================================================
+
+        self.enemy_tanks = [
+
+            EnemyTank(
+                self.player.x + 220,
+                self.player.y + 120
+            ),
+
+            EnemyTank(
+                self.player.x - 180,
+                self.player.y - 140
+            )
+        ]
+        
         # =================================================
         # CAMERA
         # =================================================
@@ -87,6 +105,9 @@ class Game:
 
         self.player.update(dt)
 
+        for enemy in self.enemy_tanks:
+            enemy.update(dt)
+
         self.camera.update(
             self.player.x,
             self.player.y
@@ -110,5 +131,11 @@ class Game:
             self.screen,
             self.camera
         )
+        
+        for enemy in self.enemy_tanks:
+            enemy.draw(
+                self.screen,
+                self.camera
+            )
 
         pygame.display.flip()

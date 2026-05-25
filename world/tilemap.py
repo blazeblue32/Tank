@@ -1,5 +1,6 @@
 import random
 
+from core.constants import TERRAIN_WATER
 from world.mapgen import generate_map
 
 class TileMap:
@@ -115,6 +116,11 @@ class TileMap:
                     center_damage *
                     falloff
                 )
+
+                terrain = self.get_tile(x, y)
+
+                if terrain == TERRAIN_WATER:
+                    continue
 
                 self.add_ground_damage(
                     x,

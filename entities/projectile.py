@@ -202,6 +202,11 @@ class Projectile:
 
         tile_x = int(self.x // TILE_SIZE)
         tile_y = int(self.y // TILE_SIZE)
+        
+        terrain = self.tilemap.get_tile(
+            tile_x,
+            tile_y
+        )
 
         # =================================================
         # RADIAL TERRAIN DAMAGE
@@ -218,12 +223,14 @@ class Projectile:
         # CRATER MARK
         # =================================================
 
-        self.tilemap.add_crater_mark(
-            tile_x,
-            tile_y,
-            2,
-            4
-        )
+        if terrain != TERRAIN_WATER:
+
+            self.tilemap.add_crater_mark(
+                tile_x,
+                tile_y,
+                2,
+                4
+            )
 
         # =================================================
         # FLASH

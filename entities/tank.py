@@ -42,9 +42,9 @@ class Tank:
         # HULL FACINGS
         # =================================================
 
-        self.hull_facing = NORTH
+        self.hull_facing = EAST
 
-        self.visual_facing = "N"
+        self.visual_facing = "E"
 
         # =================================================
         # TURNING
