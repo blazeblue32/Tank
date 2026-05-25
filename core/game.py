@@ -6,12 +6,15 @@ from core.camera import Camera
 from world.tilemap import TileMap
 from entities.tank import Tank
 from rendering.renderer import Renderer
+from systems.movement import update_input_state
 
 class Game:
 
     def __init__(self):
 
         pygame.init()
+        
+        update_input_state()
 
         self.screen = pygame.display.set_mode(
             (SCREEN_WIDTH, SCREEN_HEIGHT)

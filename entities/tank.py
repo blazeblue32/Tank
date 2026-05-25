@@ -58,6 +58,14 @@ class Tank:
         self.turn_duration = 1.5
 
         self.turn_hold_direction = None
+        
+        self.reverse_pending = False
+
+        self.reverse_pending_timer = 0
+
+        self.reverse_pending_direction = None
+
+        self.double_tap_window = 0.25
 
         # =================================================
         # TURRET
@@ -85,6 +93,8 @@ class Tank:
         self.update_turret()
 
         self.update_turning(dt)
+        
+        self.update_reverse_buffer(dt)
 
         if not self.turning and not self.moving:
             self.handle_input()
@@ -93,6 +103,22 @@ class Tank:
             self.update_movement(dt)
 
         self.update_particles(dt)
+        
+    def update_reverse_buffer(self, dt):
+
+        if not self.reverse_pending:
+            return
+
+        self.reverse_pending_timer += dt
+
+        if self.reverse_pending_timer >= self.double_tap_window:
+
+            self.reverse_pending = False
+
+            self.try_begin_move(
+                self.reverse_pending_direction,
+                reverse=True
+            )
 
     # =====================================================
     # INPUT
@@ -100,40 +126,72 @@ class Tank:
 
     def handle_input(self):
 
-        direction = get_pressed_direction()
+        just_pressed = get_just_pressed_direction()
 
-        if direction is None:
-            return
+        held_direction = get_held_direction()
 
         # ================================================
-        # FORWARD
+        # CONTINUOUS FORWARD MOVEMENT
         # ================================================
 
-        if direction == self.hull_facing:
+        if held_direction == self.hull_facing:
+
+            self.clear_reverse_buffer()
 
             self.try_begin_move(
-                direction,
+                held_direction,
                 reverse=False
             )
 
             return
 
         # ================================================
-        # REVERSE
+        # NO NEW INPUT
+        # ================================================
+
+        if just_pressed is None:
+            return
+
+        direction = just_pressed
+
+        # ================================================
+        # REVERSE / 180 TURN
         # ================================================
 
         if direction == opposite_direction(self.hull_facing):
 
-            self.try_begin_move(
-                direction,
-                reverse=True
-            )
+            # ============================================
+            # SECOND TAP
+            # ============================================
+
+            if (
+                self.reverse_pending and
+                self.reverse_pending_direction == direction
+            ):
+
+                self.clear_reverse_buffer()
+
+                self.begin_turn(direction)
+
+                return
+
+            # ============================================
+            # FIRST TAP
+            # ============================================
+
+            self.reverse_pending = True
+
+            self.reverse_pending_timer = 0
+
+            self.reverse_pending_direction = direction
 
             return
 
         # ================================================
-        # TURN
+        # NORMAL TURN
         # ================================================
+
+        self.clear_reverse_buffer()
 
         self.begin_turn(direction)
 
@@ -141,6 +199,14 @@ class Tank:
     # TURNING
     # =====================================================
 
+    def clear_reverse_buffer(self):
+
+        self.reverse_pending = False
+
+        self.reverse_pending_timer = 0
+
+        self.reverse_pending_direction = None
+    
     def begin_turn(self, direction):
 
         self.turning = True
@@ -174,27 +240,78 @@ class Tank:
 
         self.turn_timer += dt
 
-        progress = self.turn_timer / self.turn_duration
-
         # ================================================
-        # VISUAL INTERMEDIATE
+        # 180 TURN CHECK
         # ================================================
 
-        if progress < 0.5:
+        is_180 = (
+            self.turn_target ==
+            opposite_direction(self.hull_facing)
+        )
 
-            self.visual_facing = self.get_diagonal_visual()
+        if is_180:
+
+            total_duration = self.turn_duration * 2
 
         else:
 
-            self.visual_facing = self.get_cardinal_visual(
-                self.turn_target
+            total_duration = self.turn_duration
+
+        progress = self.turn_timer / total_duration
+
+        # ================================================
+        # 90 DEGREE TURN
+        # ================================================
+
+        if not is_180:
+
+            if progress < 0.5:
+
+                self.visual_facing = self.get_diagonal_visual()
+
+            else:
+
+                self.visual_facing = self.get_cardinal_visual(
+                    self.turn_target
+                )
+
+        # ================================================
+        # 180 DEGREE TURN
+        # ================================================
+
+        else:
+
+            sequence_map = {
+
+                (NORTH, SOUTH): ["NW", "W", "SW"],
+                (SOUTH, NORTH): ["SE", "E", "NE"],
+
+                (EAST, WEST): ["NE", "N", "NW"],
+                (WEST, EAST): ["SW", "S", "SE"],
+            }
+
+            sequence = sequence_map.get(
+                (self.hull_facing, self.turn_target),
+                ["NW", "W", "SW"]
             )
 
+            if progress < 0.33:
+
+                self.visual_facing = sequence[0]
+
+            elif progress < 0.66:
+
+                self.visual_facing = sequence[1]
+
+            else:
+
+                self.visual_facing = sequence[2]
+
         # ================================================
-        # TURN COMPLETE
+        # COMPLETE
         # ================================================
 
-        if self.turn_timer >= self.turn_duration:
+        if self.turn_timer >= total_duration:
 
             self.turning = False
 
@@ -226,6 +343,16 @@ class Tank:
             (WEST, SOUTH): "SW",
             (SOUTH, EAST): "SE",
             (EAST, NORTH): "NE",
+
+            # ============================================
+            # 180 TURNS
+            # ============================================
+
+            (NORTH, SOUTH): "NE",
+            (SOUTH, NORTH): "SW",
+
+            (EAST, WEST): "SE",
+            (WEST, EAST): "NW",
         }
 
         return mapping.get(pair, "N")
@@ -426,7 +553,7 @@ class Tank:
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (5, 11, 6, 2)
+            (3, 5, 2, 6)
         )
 
         # ================================================
@@ -436,13 +563,13 @@ class Tank:
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (3, 13, 2, 2)
+            (1, 3, 2, 2)
         )
 
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (11, 13, 2, 2)
+            (1, 11, 2, 2)
         )
 
         rotated = pygame.transform.rotate(

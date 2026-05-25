@@ -16,7 +16,46 @@ CARDINAL_VECTORS = {
     WEST: (-1, 0),
 }
 
-def get_pressed_direction():
+previous_keys = None
+
+# =========================================================
+# INPUT UPDATE
+# =========================================================
+
+def update_input_state():
+
+    global previous_keys
+
+    if previous_keys is None:
+        previous_keys = pygame.key.get_pressed()
+
+# =========================================================
+# JUST PRESSED
+# =========================================================
+
+def get_just_pressed_direction():
+
+    global previous_keys
+
+    keys = pygame.key.get_pressed()
+
+    for key, direction in DIRECTION_KEYS.items():
+
+        if keys[key] and not previous_keys[key]:
+
+            previous_keys = keys
+
+            return direction
+
+    previous_keys = keys
+
+    return None
+
+# =========================================================
+# HELD DIRECTION
+# =========================================================
+
+def get_held_direction():
 
     keys = pygame.key.get_pressed()
 
@@ -26,6 +65,10 @@ def get_pressed_direction():
             return direction
 
     return None
+
+# =========================================================
+# OPPOSITE
+# =========================================================
 
 def opposite_direction(direction):
 
