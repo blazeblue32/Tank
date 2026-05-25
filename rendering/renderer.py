@@ -12,6 +12,10 @@ class Renderer:
         start_x = int(camera.x // TILE_SIZE)
         start_y = int(camera.y // TILE_SIZE)
 
+        # =================================================
+        # BASE TERRAIN
+        # =================================================
+
         for y in range(start_y, start_y + visible_tiles_y):
 
             for x in range(start_x, start_x + visible_tiles_x):
@@ -22,22 +26,6 @@ class Renderer:
                     continue
 
                 color = TERRAIN_DATA[tile]["color"]
-
-                damage = tilemap.get_ground_damage(x, y)
-
-                # =========================================
-                # DARKEN DAMAGED GROUND
-                # =========================================
-
-                if damage > 0:
-
-                    darkness = int(damage * 40)
-
-                    color = (
-                        max(0, color[0] - darkness),
-                        max(0, color[1] - darkness),
-                        max(0, color[2] - darkness),
-                    )
 
                 screen_x, screen_y = camera.apply(
                     x * TILE_SIZE,
@@ -57,28 +45,140 @@ class Renderer:
                     rect
                 )
 
+        # =================================================
+        # CRATER MARKS
+        # =================================================
+
+        for y in range(start_y, start_y + visible_tiles_y):
+
+            for x in range(start_x, start_x + visible_tiles_x):
+
+                crater_marks = (
+                    tilemap.get_crater_marks(x, y)
+                )
+
+                if not crater_marks:
+                    continue
+
+                screen_x, screen_y = camera.apply(
+                    x * TILE_SIZE,
+                    y * TILE_SIZE
+                )
+
                 # =========================================
-                # DAMAGE MARK
+                # INDIVIDUAL CRATERS
                 # =========================================
 
-                if damage > 0.2:
+                for crater in crater_marks:
+
+                    crater_x = (
+                        screen_x + crater["x"]
+                    )
+
+                    crater_y = (
+                        screen_y + crater["y"]
+                    )
+
+                    crater_radius = (
+                        crater["radius"]
+                    )
+
+                    # =====================================
+                    # MAIN CRATER
+                    # =====================================
 
                     pygame.draw.circle(
                         surface,
-                        (40, 30, 30),
+                        CRATER,
                         (
-                            screen_x + TILE_SIZE // 2,
-                            screen_y + TILE_SIZE // 2
+                            crater_x,
+                            crater_y
                         ),
-                        int(2 + damage * 4)
+                        crater_radius
                     )
 
-                pygame.draw.rect(
-                    surface,
-                    GRID,
-                    rect,
-                    1
+                    # =====================================
+                    # INNER CORE
+                    # =====================================
+
+                    if crater_radius >= 3:
+
+                        pygame.draw.circle(
+                            surface,
+                            (55, 40, 30),
+                            (
+                                crater_x,
+                                crater_y
+                            ),
+                            max(
+                                1,
+                                crater_radius // 2
+                            )
+                        )
+
+                # =========================================
+                # CONNECTED LARGE CRATERS
+                # =========================================
+
+                damage = tilemap.get_ground_damage(
+                    x,
+                    y
                 )
+
+                if damage < 0.8:
+                    continue
+
+                neighbors = [
+
+                    (x + 1, y),
+                    (x - 1, y),
+                    (x, y + 1),
+                    (x, y - 1),
+                ]
+
+                for nx, ny in neighbors:
+
+                    neighbor_damage = (
+                        tilemap.get_ground_damage(
+                            nx,
+                            ny
+                        )
+                    )
+
+                    if neighbor_damage < 0.8:
+                        continue
+
+                    neighbor_screen_x = (
+                        screen_x +
+                        ((nx - x) * TILE_SIZE)
+                    )
+
+                    neighbor_screen_y = (
+                        screen_y +
+                        ((ny - y) * TILE_SIZE)
+                    )
+
+                    midpoint_x = (
+                        screen_x +
+                        neighbor_screen_x +
+                        TILE_SIZE
+                    ) // 2
+
+                    midpoint_y = (
+                        screen_y +
+                        neighbor_screen_y +
+                        TILE_SIZE
+                    ) // 2
+
+                    pygame.draw.circle(
+                        surface,
+                        CRATER,
+                        (
+                            int(midpoint_x),
+                            int(midpoint_y)
+                        ),
+                        5
+                    )
 
         # =================================================
         # BRIDGES

@@ -38,7 +38,23 @@ class Projectile:
 
         self.distance_travelled = 0
 
-        self.max_distance = TILE_SIZE * 17
+        range_roll = random.random()
+
+        if range_roll < 0.25:
+
+            shell_range = 16
+
+        elif range_roll < 0.75:
+
+            shell_range = 17
+
+        else:
+
+            shell_range = 18
+
+        self.max_distance = (
+            TILE_SIZE * shell_range
+        )
 
         # =================================================
         # OBSTRUCTION
@@ -188,13 +204,25 @@ class Projectile:
         tile_y = int(self.y // TILE_SIZE)
 
         # =================================================
-        # TERRAIN DAMAGE
+        # RADIAL TERRAIN DAMAGE
         # =================================================
 
-        self.tilemap.add_ground_damage(
+        self.tilemap.add_radial_ground_damage(
             tile_x,
             tile_y,
-            0.18
+            radius=1,
+            center_damage=0.18
+        )
+        
+        # =================================================
+        # CRATER MARK
+        # =================================================
+
+        self.tilemap.add_crater_mark(
+            tile_x,
+            tile_y,
+            2,
+            4
         )
 
         # =================================================

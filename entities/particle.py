@@ -15,7 +15,7 @@ class SmokeParticle:
         self.x = x
         self.y = y
 
-        self.life = random.uniform(0.12, 2.4)
+        self.life = random.uniform(0.4, 0.8)
 
         self.vx = random.uniform(-5, 5)
         self.vy = random.uniform(-8, -2)
