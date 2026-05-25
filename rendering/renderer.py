@@ -23,6 +23,22 @@ class Renderer:
 
                 color = TERRAIN_DATA[tile]["color"]
 
+                damage = tilemap.get_ground_damage(x, y)
+
+                # =========================================
+                # DARKEN DAMAGED GROUND
+                # =========================================
+
+                if damage > 0:
+
+                    darkness = int(damage * 40)
+
+                    color = (
+                        max(0, color[0] - darkness),
+                        max(0, color[1] - darkness),
+                        max(0, color[2] - darkness),
+                    )
+
                 screen_x, screen_y = camera.apply(
                     x * TILE_SIZE,
                     y * TILE_SIZE
@@ -40,6 +56,22 @@ class Renderer:
                     color,
                     rect
                 )
+
+                # =========================================
+                # DAMAGE MARK
+                # =========================================
+
+                if damage > 0.2:
+
+                    pygame.draw.circle(
+                        surface,
+                        (40, 30, 30),
+                        (
+                            screen_x + TILE_SIZE // 2,
+                            screen_y + TILE_SIZE // 2
+                        ),
+                        int(2 + damage * 4)
+                    )
 
                 pygame.draw.rect(
                     surface,

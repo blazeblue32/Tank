@@ -6,6 +6,16 @@ class TileMap:
 
         self.tiles, self.bridges = generate_map()
 
+        # =================================================
+        # TERRAIN DAMAGE
+        # =================================================
+
+        self.ground_damage = {}
+
+    # =====================================================
+    # TILE ACCESS
+    # =====================================================
+
     def get_tile(self, x, y):
 
         if y < 0 or y >= len(self.tiles):
@@ -17,7 +27,7 @@ class TileMap:
         return self.tiles[y][x]
 
     # =====================================================
-    # BRIDGE CHECK
+    # BRIDGES
     # =====================================================
 
     def has_bridge(self, x, y):
@@ -31,3 +41,28 @@ class TileMap:
                 return True
 
         return False
+
+    # =====================================================
+    # GROUND DAMAGE
+    # =====================================================
+
+    def add_ground_damage(
+        self,
+        x,
+        y,
+        amount
+    ):
+
+        key = (x, y)
+
+        current = self.ground_damage.get(key, 0)
+
+        current += amount
+
+        current = min(1.0, current)
+
+        self.ground_damage[key] = current
+
+    def get_ground_damage(self, x, y):
+
+        return self.ground_damage.get((x, y), 0)

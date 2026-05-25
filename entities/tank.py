@@ -5,6 +5,7 @@ import random
 from core.constants import *
 from systems.movement import *
 from world.terrain import *
+from entities.projectile import Projectile
 
 from entities.particle import SmokeParticle
 
@@ -84,6 +85,16 @@ class Tank:
 
         self.exhaust_timer = 0
 
+        # =================================================
+        # PROJECTILES
+        # =================================================
+
+        self.projectiles = []
+
+        self.fire_cooldown = 0.6
+
+        self.fire_timer = 0
+
     # =====================================================
     # UPDATE
     # =====================================================
@@ -103,6 +114,10 @@ class Tank:
             self.update_movement(dt)
 
         self.update_particles(dt)
+        
+        self.update_projectiles(dt)
+
+        self.update_firing(dt)
         
     def update_reverse_buffer(self, dt):
 
@@ -519,11 +534,80 @@ class Tank:
         ]
 
     # =====================================================
+    # FIRING
+    # =====================================================
+
+    def update_firing(self, dt):
+
+        self.fire_timer -= dt
+
+        keys = pygame.key.get_pressed()
+
+        if not keys[pygame.K_SPACE]:
+            return
+
+        if self.fire_timer > 0:
+            return
+
+        self.fire_timer = self.fire_cooldown
+
+        self.fire_shell()
+
+    def fire_shell(self):
+
+        angle = TURRET_DIRECTIONS[
+            self.turret_index
+        ]
+
+        radians = math.radians(angle)
+
+        spawn_distance = 10
+
+        center_x = self.x + TILE_SIZE // 2
+        center_y = self.y + TILE_SIZE // 2
+
+        spawn_x = (
+            center_x +
+            math.cos(radians) * spawn_distance
+        )
+
+        spawn_y = (
+            center_y +
+            math.sin(radians) * spawn_distance
+        )
+
+        projectile = Projectile(
+            spawn_x,
+            spawn_y,
+            angle,
+            self.tilemap
+        )
+
+        self.projectiles.append(projectile)
+
+    # =====================================================
+    # PROJECTILES
+    # =====================================================
+
+    def update_projectiles(self, dt):
+
+        for projectile in self.projectiles:
+            projectile.update(dt)
+
+        self.projectiles = [
+            p for p in self.projectiles
+            if not p.dead
+        ]    
+    
+    # =====================================================
     # DRAW
     # =====================================================
 
     def draw(self, surface, camera):
 
+        for projectile in self.projectiles:
+            projectile.draw(surface, camera)
+        
         for particle in self.particles:
             particle.draw(surface, camera)
 
