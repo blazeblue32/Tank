@@ -25,23 +25,33 @@ class Projectile:
         self.vx = math.cos(radians)
         self.vy = math.sin(radians)
 
+        # =================================================
+        # MOVEMENT
+        # =================================================
+
         self.speed = 140
 
         self.distance_travelled = 0
-        self.max_distance = TILE_SIZE * 16
+
+        self.max_distance = TILE_SIZE * 17
+
+        # =================================================
+        # OBSTRUCTION
+        # =================================================
+
+        self.obstruction = 0
+
+        # =================================================
+        # STATE
+        # =================================================
 
         self.dead = False
-
-        self.smoke_timer = 0
 
     # =====================================================
     # UPDATE
     # =====================================================
 
     def update(self, dt):
-
-        old_x = self.x
-        old_y = self.y
 
         move_x = self.vx * self.speed * dt
         move_y = self.vy * self.speed * dt
@@ -87,12 +97,48 @@ class Projectile:
             return
 
         # =================================================
-        # FOREST INTERCEPTION
+        # CONCEALMENT
         # =================================================
+
+        concealment_density = 0
 
         if terrain == TERRAIN_FOREST:
 
-            if random.random() < 0.15:
+            concealment_density = 2.0
+
+        # =================================================
+        # OBSTRUCTION ACCUMULATION
+        # =================================================
+
+        if concealment_density > 0:
+
+            range_factor = (
+                self.distance_travelled /
+                self.max_distance
+            )
+
+            range_factor = max(
+                0.15,
+                range_factor
+            )
+
+            self.obstruction += (
+                concealment_density *
+                range_factor *
+                dt
+            )
+
+            # =============================================
+            # INTERCEPTION
+            # =============================================
+
+            intercept_probability = (
+                1 - math.exp(
+                    -self.obstruction
+                )
+            )
+
+            if random.random() < intercept_probability:
 
                 self.create_impact()
 
@@ -126,7 +172,28 @@ class Projectile:
             self.y
         )
 
+        # =================================================
+        # SHELL
+        # =================================================
+
         surface.fill(
             (255, 240, 180),
             (int(screen_x), int(screen_y), 2, 2)
+        )
+
+        # =================================================
+        # TRAIL
+        # =================================================
+
+        trail_x = screen_x - (self.vx * 2)
+        trail_y = screen_y - (self.vy * 2)
+
+        surface.fill(
+            (180, 180, 180),
+            (
+                int(trail_x),
+                int(trail_y),
+                1,
+                1
+            )
         )
