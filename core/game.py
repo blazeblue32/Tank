@@ -1,0 +1,111 @@
+import pygame
+
+from core.constants import *
+from core.camera import Camera
+
+from world.tilemap import TileMap
+from entities.tank import Tank
+from rendering.renderer import Renderer
+
+class Game:
+
+    def __init__(self):
+
+        pygame.init()
+
+        self.screen = pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT)
+        )
+
+        pygame.display.set_caption("Steel Thunder 800")
+
+        self.clock = pygame.time.Clock()
+
+        self.running = True
+
+        # =================================================
+        # WORLD
+        # =================================================
+
+        self.tilemap = TileMap()
+
+        # =================================================
+        # PLAYER
+        # =================================================
+
+        self.player = Tank(self.tilemap)
+
+        # =================================================
+        # CAMERA
+        # =================================================
+
+        self.camera = Camera()
+
+        # =================================================
+        # RENDERER
+        # =================================================
+
+        self.renderer = Renderer()
+
+    # =====================================================
+    # RUN
+    # =====================================================
+
+    def run(self):
+
+        while self.running:
+
+            dt = self.clock.tick(FPS) / 1000.0
+
+            self.handle_events()
+
+            self.update(dt)
+
+            self.draw()
+
+        pygame.quit()
+
+    # =====================================================
+    # EVENTS
+    # =====================================================
+
+    def handle_events(self):
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                self.running = False
+
+    # =====================================================
+    # UPDATE
+    # =====================================================
+
+    def update(self, dt):
+
+        self.player.update(dt)
+
+        self.camera.update(
+            self.player.x,
+            self.player.y
+        )
+
+    # =====================================================
+    # DRAW
+    # =====================================================
+
+    def draw(self):
+
+        self.screen.fill(BLACK)
+
+        self.renderer.draw_map(
+            self.screen,
+            self.tilemap,
+            self.camera
+        )
+
+        self.player.draw(
+            self.screen,
+            self.camera
+        )
+
+        pygame.display.flip()
