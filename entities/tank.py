@@ -595,9 +595,14 @@ class Tank:
             projectile.update(dt)
 
         self.projectiles = [
+
             p for p in self.projectiles
-            if not p.dead
-        ]    
+
+            if (
+                not p.dead or
+                len(p.impact_particles) > 0
+            )
+        ]
     
     # =====================================================
     # DRAW
