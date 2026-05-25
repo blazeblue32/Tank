@@ -99,7 +99,11 @@ class Tank:
     # UPDATE
     # =====================================================
 
-    def update(self, dt):
+    def update(
+        self,
+        dt,
+        enemy_tanks
+    ):
 
         self.update_turret()
 
@@ -115,7 +119,10 @@ class Tank:
 
         self.update_particles(dt)
         
-        self.update_projectiles(dt)
+        self.update_projectiles(
+            dt,
+            enemy_tanks
+        )
 
         self.update_firing(dt)
         
@@ -156,6 +163,26 @@ class Tank:
             self.try_begin_move(
                 held_direction,
                 reverse=False
+            )
+
+            return
+
+        # ================================================
+        # CONTINUOUS REVERSE MOVEMENT
+        # ================================================
+
+        if (
+            held_direction ==
+            opposite_direction(self.hull_facing)
+            and
+            just_pressed is None
+            and
+            not self.reverse_pending
+        ):
+
+            self.try_begin_move(
+                held_direction,
+                reverse=True
             )
 
             return
@@ -580,7 +607,8 @@ class Tank:
             spawn_x,
             spawn_y,
             angle,
-            self.tilemap
+            self.tilemap,
+            self
         )
 
         self.projectiles.append(projectile)
@@ -589,10 +617,19 @@ class Tank:
     # PROJECTILES
     # =====================================================
 
-    def update_projectiles(self, dt):
+    def update_projectiles(
+        self,
+        dt,
+        enemy_tanks
+    ):
 
         for projectile in self.projectiles:
+
             projectile.update(dt)
+
+            projectile.check_tank_collision(
+                enemy_tanks
+            )
 
         self.projectiles = [
 
@@ -600,7 +637,8 @@ class Tank:
 
             if (
                 not p.dead or
-                len(p.impact_particles) > 0
+                len(p.impact_particles) > 0 or
+                len(p.impact_flashes) > 0
             )
         ]
     

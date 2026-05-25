@@ -15,10 +15,12 @@ class Projectile:
         x,
         y,
         angle,
-        tilemap
+        tilemap,
+        owner
     ):
 
         self.tilemap = tilemap
+        self.owner = owner
 
         self.x = x
         self.y = y
@@ -75,6 +77,12 @@ class Projectile:
         # =================================================
 
         self.dead = False
+        
+        # =================================================
+        # Hit Radius
+        # =================================================
+        
+        self.hit_radius = 6
 
     # =====================================================
     # UPDATE
@@ -194,6 +202,102 @@ class Projectile:
 
                 return
 
+    # =====================================================
+    # TANK COLLISION
+    # =====================================================
+
+    def check_tank_collision(
+        self,
+        tanks
+    ):
+
+        if self.dead:
+            return
+
+        for tank in tanks:
+
+            # =============================================
+            # IGNORE OWNER
+            # =============================================
+
+            if tank == self.owner:
+                continue
+
+            if not tank.alive:
+                continue
+
+            dx = tank.x - self.x
+            dy = tank.y - self.y
+
+            distance = math.sqrt(
+                dx * dx +
+                dy * dy
+            )
+
+            if distance > self.hit_radius:
+                continue
+
+            # =============================================
+            # HIT
+            # =============================================
+
+            tank.take_hit()
+
+            self.create_tank_impact()
+
+            self.dead = True
+
+            return
+    
+    # =====================================================
+    # TANK IMPACT
+    # =====================================================
+
+    def create_tank_impact(self):
+
+        # =================================================
+        # FLASH
+        # =================================================
+
+        self.impact_flashes.append(
+            ImpactFlash(
+                self.x,
+                self.y
+            )
+        )
+
+        # =================================================
+        # METAL SPARKS
+        # =================================================
+
+        for _ in range(12):
+
+            self.impact_particles.append(
+                ImpactParticle(
+                    self.x,
+                    self.y,
+                    (255, 220, 140),
+                    0.18,
+                    100
+                )
+            )
+
+        # =================================================
+        # LIGHT SMOKE
+        # =================================================
+
+        for _ in range(3):
+
+            self.impact_particles.append(
+                ImpactParticle(
+                    self.x,
+                    self.y,
+                    (120, 120, 120),
+                    0.30,
+                    20
+                )
+            )
+    
     # =====================================================
     # IMPACT
     # =====================================================

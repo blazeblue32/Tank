@@ -103,7 +103,10 @@ class Game:
 
     def update(self, dt):
 
-        self.player.update(dt)
+        self.player.update(
+            dt,
+            self.enemy_tanks
+        )
 
         for enemy in self.enemy_tanks:
             enemy.update(dt)
