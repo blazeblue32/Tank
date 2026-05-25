@@ -1,6 +1,12 @@
 import random
+import math
+import pygame
 
 from core.constants import *
+
+# =========================================================
+# SMOKE PARTICLE
+# =========================================================
 
 class SmokeParticle:
 
@@ -9,7 +15,7 @@ class SmokeParticle:
         self.x = x
         self.y = y
 
-        self.life = random.uniform(0.4, 0.8)
+        self.life = random.uniform(0.12, 2.4)
 
         self.vx = random.uniform(-5, 5)
         self.vy = random.uniform(-8, -2)
@@ -23,18 +29,30 @@ class SmokeParticle:
 
     def draw(self, surface, camera):
 
-        screen_x, screen_y = camera.apply(self.x, self.y)
+        screen_x, screen_y = camera.apply(
+            self.x,
+            self.y
+        )
 
         surface.fill(
             EXHAUST,
-            (int(screen_x), int(screen_y), 1, 1)
+            (
+                int(screen_x),
+                int(screen_y),
+                1,
+                1
+            )
         )
 
     @property
     def dead(self):
 
         return self.life <= 0
-        
+
+# =========================================================
+# IMPACT PARTICLE
+# =========================================================
+
 class ImpactParticle:
 
     def __init__(
@@ -53,19 +71,15 @@ class ImpactParticle:
 
         self.life = lifetime
 
-        angle = random.uniform(0, 6.28318)
+        angle = random.uniform(0, math.pi * 2)
 
         velocity = random.uniform(
             speed * 0.5,
             speed
         )
 
-        self.vx = velocity * random.uniform(-1, 1)
-        self.vy = velocity * random.uniform(-1, 1)
-
-    # =====================================================
-    # UPDATE
-    # =====================================================
+        self.vx = math.cos(angle) * velocity
+        self.vy = math.sin(angle) * velocity
 
     def update(self, dt):
 
@@ -74,12 +88,8 @@ class ImpactParticle:
         self.x += self.vx * dt
         self.y += self.vy * dt
 
-        self.vx *= 0.92
-        self.vy *= 0.92
-
-    # =====================================================
-    # DRAW
-    # =====================================================
+        self.vx *= 0.90
+        self.vy *= 0.90
 
     def draw(self, surface, camera):
 
@@ -98,9 +108,56 @@ class ImpactParticle:
             )
         )
 
-    # =====================================================
-    # DEAD
-    # =====================================================
+    @property
+    def dead(self):
+
+        return self.life <= 0
+
+# =========================================================
+# IMPACT FLASH
+# =========================================================
+
+class ImpactFlash:
+
+    def __init__(self, x, y):
+
+        self.x = x
+        self.y = y
+
+        self.life = 0.08
+
+        self.max_radius = 5
+
+    def update(self, dt):
+
+        self.life -= dt
+
+    def draw(self, surface, camera):
+
+        if self.life <= 0:
+            return
+
+        screen_x, screen_y = camera.apply(
+            self.x,
+            self.y
+        )
+
+        progress = self.life / 0.08
+
+        radius = int(
+            self.max_radius * progress
+        )
+
+        pygame.draw.circle(
+            surface,
+            (255, 240, 180),
+            (
+                int(screen_x),
+                int(screen_y)
+            ),
+            max(1, radius),
+            1
+        )
 
     @property
     def dead(self):

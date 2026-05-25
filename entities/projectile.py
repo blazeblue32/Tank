@@ -3,7 +3,10 @@ import random
 
 from core.constants import *
 
-from entities.particle import ImpactParticle
+from entities.particle import (
+    ImpactParticle,
+    ImpactFlash
+)
 
 class Projectile:
 
@@ -44,10 +47,12 @@ class Projectile:
         self.obstruction = 0
 
         # =================================================
-        # PARTICLES
+        # EFFECTS
         # =================================================
 
         self.impact_particles = []
+
+        self.impact_flashes = []
 
         # =================================================
         # STATE
@@ -62,7 +67,7 @@ class Projectile:
     def update(self, dt):
 
         # =================================================
-        # IMPACT PARTICLES
+        # EFFECTS
         # =================================================
 
         for particle in self.impact_particles:
@@ -71,6 +76,14 @@ class Projectile:
         self.impact_particles = [
             p for p in self.impact_particles
             if not p.dead
+        ]
+
+        for flash in self.impact_flashes:
+            flash.update(dt)
+
+        self.impact_flashes = [
+            f for f in self.impact_flashes
+            if not f.dead
         ]
 
         if self.dead:
@@ -185,32 +198,35 @@ class Projectile:
         )
 
         # =================================================
-        # IMPACT PARTICLES
+        # FLASH
         # =================================================
 
-        for _ in range(8):
+        self.impact_flashes.append(
+            ImpactFlash(
+                self.x,
+                self.y
+            )
+        )
+
+        # =================================================
+        # DIRT
+        # =================================================
+
+        for _ in range(10):
 
             self.impact_particles.append(
                 ImpactParticle(
                     self.x,
                     self.y,
                     (80, 70, 60),
-                    0.25,
-                    45
+                    0.30,
+                    50
                 )
             )
 
-        for _ in range(3):
-
-            self.impact_particles.append(
-                ImpactParticle(
-                    self.x,
-                    self.y,
-                    (255, 220, 120),
-                    0.12,
-                    65
-                )
-            )
+        # =================================================
+        # SPARKS
+        # =================================================
 
         for _ in range(4):
 
@@ -218,9 +234,25 @@ class Projectile:
                 ImpactParticle(
                     self.x,
                     self.y,
+                    (255, 220, 120),
+                    0.12,
+                    80
+                )
+            )
+
+        # =================================================
+        # SMOKE
+        # =================================================
+
+        for _ in range(5):
+
+            self.impact_particles.append(
+                ImpactParticle(
+                    self.x,
+                    self.y,
                     (120, 120, 120),
-                    0.35,
-                    25
+                    0.45,
+                    30
                 )
             )
 
@@ -231,7 +263,14 @@ class Projectile:
     def draw(self, surface, camera):
 
         # =================================================
-        # IMPACT PARTICLES
+        # FLASHES
+        # =================================================
+
+        for flash in self.impact_flashes:
+            flash.draw(surface, camera)
+
+        # =================================================
+        # PARTICLES
         # =================================================
 
         for particle in self.impact_particles:
@@ -251,7 +290,12 @@ class Projectile:
 
         surface.fill(
             (255, 240, 180),
-            (int(screen_x), int(screen_y), 2, 2)
+            (
+                int(screen_x),
+                int(screen_y),
+                2,
+                2
+            )
         )
 
         # =================================================
