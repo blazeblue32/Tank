@@ -11,23 +11,23 @@ class Tank:
 
         self.tilemap = tilemap
 
-        # ==========================================
-        # Tile position
-        # ==========================================
+        # =================================================
+        # TILE POSITION
+        # =================================================
 
         self.tile_x = 10
         self.tile_y = 10
 
-        # ==========================================
-        # World position
-        # ==========================================
+        # =================================================
+        # WORLD POSITION
+        # =================================================
 
         self.x = self.tile_x * TILE_SIZE
         self.y = self.tile_y * TILE_SIZE
 
-        # ==========================================
-        # Movement
-        # ==========================================
+        # =================================================
+        # MOVEMENT
+        # =================================================
 
         self.target_tile_x = self.tile_x
         self.target_tile_y = self.tile_y
@@ -35,15 +35,17 @@ class Tank:
         self.moving = False
 
         self.direction = "down"
-        self.queued_direction = None
 
-        self.base_speed = 90
+        self.base_speed = 22
 
-        # ==========================================
-        # Turret
-        # ==========================================
+        # =================================================
+        # TURRET
+        # =================================================
 
-        self.turret_angle = 0
+        self.turret_index = 0
+
+        self.left_pressed_last = False
+        self.right_pressed_last = False
 
     # =====================================================
     # UPDATE
@@ -51,15 +53,14 @@ class Tank:
 
     def update(self, dt):
 
-        self.update_turret(dt)
+        self.update_turret()
 
-        input_direction = get_input_direction()
+        if not self.moving:
 
-        if input_direction:
-            self.queued_direction = input_direction
+            direction = get_input_direction()
 
-        if not self.moving and self.queued_direction:
-            self.try_begin_move(self.queued_direction)
+            if direction:
+                self.try_begin_move(direction)
 
         if self.moving:
             self.update_movement(dt)
@@ -68,17 +69,25 @@ class Tank:
     # TURRET
     # =====================================================
 
-    def update_turret(self, dt):
+    def update_turret(self):
 
         keys = pygame.key.get_pressed()
 
-        rotation_speed = 180
+        left_pressed = keys[pygame.K_LEFT]
+        right_pressed = keys[pygame.K_RIGHT]
 
-        if keys[pygame.K_LEFT]:
-            self.turret_angle -= rotation_speed * dt
+        if left_pressed and not self.left_pressed_last:
 
-        if keys[pygame.K_RIGHT]:
-            self.turret_angle += rotation_speed * dt
+            self.turret_index -= 1
+            self.turret_index %= 8
+
+        if right_pressed and not self.right_pressed_last:
+
+            self.turret_index += 1
+            self.turret_index %= 8
+
+        self.left_pressed_last = left_pressed
+        self.right_pressed_last = right_pressed
 
     # =====================================================
     # MOVEMENT
@@ -96,7 +105,16 @@ class Tank:
         if terrain is None:
             return
 
-        if not terrain_passable(terrain):
+        # =================================================
+        # WATER CHECK
+        # =================================================
+
+        if terrain == TERRAIN_WATER:
+
+            if not self.tilemap.has_bridge(new_x, new_y):
+                return
+
+        elif not terrain_passable(terrain):
             return
 
         self.target_tile_x = new_x
@@ -124,7 +142,7 @@ class Tank:
 
         distance = math.sqrt(dx * dx + dy * dy)
 
-        if distance < 1:
+        if distance < 0.5:
 
             self.x = target_x
             self.y = target_y
@@ -133,9 +151,6 @@ class Tank:
             self.tile_y = self.target_tile_y
 
             self.moving = False
-
-            if self.queued_direction:
-                self.try_begin_move(self.queued_direction)
 
             return
 
@@ -153,9 +168,9 @@ class Tank:
 
         screen_x, screen_y = camera.apply(self.x, self.y)
 
-        # ==========================================
-        # Hull
-        # ==========================================
+        # =================================================
+        # HULL
+        # =================================================
 
         body_rect = pygame.Rect(
             screen_x + 2,
@@ -170,9 +185,9 @@ class Tank:
             body_rect
         )
 
-        # ==========================================
-        # Turret
-        # ==========================================
+        # =================================================
+        # TURRET
+        # =================================================
 
         center_x = screen_x + TILE_SIZE // 2
         center_y = screen_y + TILE_SIZE // 2
@@ -184,11 +199,9 @@ class Tank:
             4
         )
 
-        # ==========================================
-        # Barrel
-        # ==========================================
+        angle = TURRET_DIRECTIONS[self.turret_index]
 
-        radians = math.radians(self.turret_angle)
+        radians = math.radians(angle)
 
         barrel_length = 10
 

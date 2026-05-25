@@ -47,3 +47,46 @@ class Renderer:
                     rect,
                     1
                 )
+
+        # =================================================
+        # BRIDGES
+        # =================================================
+
+        for bridge in tilemap.bridges:
+
+            if bridge["destroyed"]:
+                continue
+
+            screen_x, screen_y = camera.apply(
+                bridge["x"] * TILE_SIZE,
+                bridge["y"] * TILE_SIZE
+            )
+
+            rect = pygame.Rect(
+                screen_x,
+                screen_y + 3,
+                TILE_SIZE,
+                TILE_SIZE - 6
+            )
+
+            pygame.draw.rect(
+                surface,
+                BRIDGE,
+                rect
+            )
+
+            pygame.draw.line(
+                surface,
+                BLACK,
+                (screen_x, screen_y + 3),
+                (screen_x + TILE_SIZE, screen_y + 3),
+                1
+            )
+
+            pygame.draw.line(
+                surface,
+                BLACK,
+                (screen_x, screen_y + TILE_SIZE - 3),
+                (screen_x + TILE_SIZE, screen_y + TILE_SIZE - 3),
+                1
+            )

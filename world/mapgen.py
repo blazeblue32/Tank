@@ -27,8 +27,10 @@ def generate_map():
         tiles.append(row)
 
     # =====================================================
-    # Create river
+    # River
     # =====================================================
+
+    river_tiles = []
 
     river_x = MAP_WIDTH // 2
 
@@ -38,30 +40,43 @@ def generate_map():
 
         for rx in range(width):
 
-            if 0 <= river_x + rx < MAP_WIDTH:
-                tiles[y][river_x + rx] = TERRAIN_WATER
+            tx = river_x + rx
+
+            if 0 <= tx < MAP_WIDTH:
+
+                tiles[y][tx] = TERRAIN_WATER
+
+                river_tiles.append((tx, y))
 
         river_x += random.randint(-1, 1)
 
         river_x = max(5, min(MAP_WIDTH - 5, river_x))
 
     # =====================================================
-    # Create horizontal road
+    # Main road
     # =====================================================
 
     road_y = MAP_HEIGHT // 2
 
     for x in range(MAP_WIDTH):
 
-        tiles[road_y][x] = TERRAIN_ROAD
+        if tiles[road_y][x] != TERRAIN_WATER:
+            tiles[road_y][x] = TERRAIN_ROAD
 
     # =====================================================
-    # Create bridge
+    # Bridge objects
     # =====================================================
 
-    for bx in range(MAP_WIDTH):
+    bridges = []
 
-        if tiles[road_y][bx] == TERRAIN_WATER:
-            tiles[road_y][bx] = TERRAIN_ROAD
+    for x in range(MAP_WIDTH):
 
-    return tiles
+        if tiles[road_y][x] == TERRAIN_WATER:
+
+            bridges.append({
+                "x": x,
+                "y": road_y,
+                "destroyed": False
+            })
+
+    return tiles, bridges
