@@ -2,41 +2,24 @@ import pygame
 import math
 
 from core.constants import *
+from entities.tank_base import TankBase
 
-class EnemyTank:
+class EnemyTank(TankBase):
 
     def __init__(
         self,
+        tilemap,
         x,
         y
     ):
 
+        super().__init__(tilemap)
+
         self.x = x
         self.y = y
 
-        # =================================================
-        # FACING
-        # =================================================
-
-        self.hull_facing = EAST
-
-        self.visual_facing = "E"
-
-        self.turret_index = 0
-
-        # =================================================
-        # STATE
-        # =================================================
-
-        self.alive = True
-        
-        # =================================================
-        # ARMOR
-        # =================================================
-
-        self.front_armor = 3
-        self.side_armor = 2
-        self.rear_armor = 1
+        self.tile_x = x // TILE_SIZE
+        self.tile_y = y // TILE_SIZE
 
     # =====================================================
     # UPDATE

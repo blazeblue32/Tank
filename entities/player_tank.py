@@ -1,0 +1,173 @@
+from entities.tank_base import TankBase
+
+from systems.movement import *
+
+import pygame
+
+class PlayerTank(TankBase):
+
+    def __init__(self, tilemap):
+
+        super().__init__(tilemap)
+
+    # =====================================================
+    # UPDATE
+    # =====================================================
+
+    def update(
+        self,
+        dt,
+        enemy_tanks
+    ):
+
+        self.update_turret()
+
+        self.update_turning(dt)
+
+        self.update_reverse_buffer(dt)
+
+        if not self.turning and not self.moving:
+            self.handle_input()
+
+        if self.moving:
+            self.update_movement(dt)
+
+        self.update_particles(dt)
+
+        self.update_projectiles(
+            dt,
+            enemy_tanks
+        )
+
+        self.update_firing(dt)
+
+    # =====================================================
+    # INPUT
+    # =====================================================
+
+    def handle_input(self):
+
+        just_pressed = get_just_pressed_direction()
+
+        held_direction = get_held_direction()
+
+        # ================================================
+        # CONTINUOUS FORWARD MOVEMENT
+        # ================================================
+
+        if held_direction == self.hull_facing:
+
+            self.clear_reverse_buffer()
+
+            self.try_begin_move(
+                held_direction,
+                reverse=False
+            )
+
+            return
+
+        # ================================================
+        # CONTINUOUS REVERSE MOVEMENT
+        # ================================================
+
+        if (
+            held_direction ==
+            opposite_direction(self.hull_facing)
+            and
+            just_pressed is None
+            and
+            not self.reverse_pending
+        ):
+
+            self.try_begin_move(
+                held_direction,
+                reverse=True
+            )
+
+            return
+
+        # ================================================
+        # NO NEW INPUT
+        # ================================================
+
+        if just_pressed is None:
+            return
+
+        direction = just_pressed
+
+        # ================================================
+        # REVERSE / 180 TURN
+        # ================================================
+
+        if direction == opposite_direction(self.hull_facing):
+
+            if (
+                self.reverse_pending and
+                self.reverse_pending_direction == direction
+            ):
+
+                self.clear_reverse_buffer()
+
+                self.begin_turn(direction)
+
+                return
+
+            self.reverse_pending = True
+
+            self.reverse_pending_timer = 0
+
+            self.reverse_pending_direction = direction
+
+            return
+
+        # ================================================
+        # NORMAL TURN
+        # ================================================
+
+        self.clear_reverse_buffer()
+
+        self.begin_turn(direction)
+
+    # =====================================================
+    # TURRET
+    # =====================================================
+
+    def update_turret(self):
+
+        keys = pygame.key.get_pressed()
+
+        left_pressed = keys[pygame.K_LEFT]
+        right_pressed = keys[pygame.K_RIGHT]
+
+        if left_pressed and not self.left_pressed_last:
+
+            self.turret_index -= 1
+            self.turret_index %= 8
+
+        if right_pressed and not self.right_pressed_last:
+
+            self.turret_index += 1
+            self.turret_index %= 8
+
+        self.left_pressed_last = left_pressed
+        self.right_pressed_last = right_pressed
+
+    # =====================================================
+    # FIRING
+    # =====================================================
+
+    def update_firing(self, dt):
+
+        self.fire_timer -= dt
+
+        keys = pygame.key.get_pressed()
+
+        if not keys[pygame.K_SPACE]:
+            return
+
+        if self.fire_timer > 0:
+            return
+
+        self.fire_timer = self.fire_cooldown
+
+        self.fire_shell()

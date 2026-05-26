@@ -4,7 +4,7 @@ from core.constants import *
 from core.camera import Camera
 
 from world.tilemap import TileMap
-from entities.tank import Tank
+from entities.player_tank import PlayerTank
 from entities.enemy_tank import EnemyTank
 from rendering.renderer import Renderer
 from systems.movement import update_input_state
@@ -37,7 +37,7 @@ class Game:
         # PLAYER
         # =================================================
      
-        self.player = Tank(self.tilemap)
+        self.player = PlayerTank(self.tilemap)
 
         # =================================================
         # ENEMIES
@@ -46,11 +46,13 @@ class Game:
         self.enemy_tanks = [
 
             EnemyTank(
+                self.tilemap,
                 self.player.x + 220,
                 self.player.y + 120
             ),
 
             EnemyTank(
+                self.tilemap,
                 self.player.x - 180,
                 self.player.y - 140
             )

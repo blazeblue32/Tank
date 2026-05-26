@@ -82,7 +82,7 @@ class Projectile:
         # Hit Radius
         # =================================================
         
-        self.hit_radius = 10
+        self.hit_radius = 8
         
         # =================================================
         # PENETRATION
@@ -232,8 +232,18 @@ class Projectile:
             if not tank.alive:
                 continue
 
-            dx = tank.x - self.x
-            dy = tank.y - self.y
+            tank_center_x = (
+                tank.x +
+                TILE_SIZE // 2
+            )
+
+            tank_center_y = (
+                tank.y +
+                TILE_SIZE // 2
+            )
+
+            dx = tank_center_x - self.x
+            dy = tank_center_y - self.y
 
             distance = math.sqrt(
                 dx * dx +

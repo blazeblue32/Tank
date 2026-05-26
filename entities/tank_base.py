@@ -5,11 +5,10 @@ import random
 from core.constants import *
 from systems.movement import *
 from world.terrain import *
+from entities.particle import SmokeParticle
 from entities.projectile import Projectile
 
-from entities.particle import SmokeParticle
-
-class Tank:
+class TankBase:
 
     def __init__(self, tilemap):
 
@@ -94,6 +93,20 @@ class Tank:
         self.fire_cooldown = 0.6
 
         self.fire_timer = 0
+        
+        # =================================================
+        # STATE
+        # =================================================
+
+        self.alive = True
+        
+        # =================================================
+        # ARMOR
+        # =================================================
+
+        self.front_armor = 3
+        self.side_armor = 2
+        self.rear_armor = 1
 
     # =====================================================
     # UPDATE
@@ -141,101 +154,6 @@ class Tank:
                 self.reverse_pending_direction,
                 reverse=True
             )
-
-    # =====================================================
-    # INPUT
-    # =====================================================
-
-    def handle_input(self):
-
-        just_pressed = get_just_pressed_direction()
-
-        held_direction = get_held_direction()
-
-        # ================================================
-        # CONTINUOUS FORWARD MOVEMENT
-        # ================================================
-
-        if held_direction == self.hull_facing:
-
-            self.clear_reverse_buffer()
-
-            self.try_begin_move(
-                held_direction,
-                reverse=False
-            )
-
-            return
-
-        # ================================================
-        # CONTINUOUS REVERSE MOVEMENT
-        # ================================================
-
-        if (
-            held_direction ==
-            opposite_direction(self.hull_facing)
-            and
-            just_pressed is None
-            and
-            not self.reverse_pending
-        ):
-
-            self.try_begin_move(
-                held_direction,
-                reverse=True
-            )
-
-            return
-
-        # ================================================
-        # NO NEW INPUT
-        # ================================================
-
-        if just_pressed is None:
-            return
-
-        direction = just_pressed
-
-        # ================================================
-        # REVERSE / 180 TURN
-        # ================================================
-
-        if direction == opposite_direction(self.hull_facing):
-
-            # ============================================
-            # SECOND TAP
-            # ============================================
-
-            if (
-                self.reverse_pending and
-                self.reverse_pending_direction == direction
-            ):
-
-                self.clear_reverse_buffer()
-
-                self.begin_turn(direction)
-
-                return
-
-            # ============================================
-            # FIRST TAP
-            # ============================================
-
-            self.reverse_pending = True
-
-            self.reverse_pending_timer = 0
-
-            self.reverse_pending_direction = direction
-
-            return
-
-        # ================================================
-        # NORMAL TURN
-        # ================================================
-
-        self.clear_reverse_buffer()
-
-        self.begin_turn(direction)
 
     # =====================================================
     # TURNING
@@ -487,30 +405,6 @@ class Tank:
         self.spawn_exhaust(dt)
 
     # =====================================================
-    # TURRET
-    # =====================================================
-
-    def update_turret(self):
-
-        keys = pygame.key.get_pressed()
-
-        left_pressed = keys[pygame.K_LEFT]
-        right_pressed = keys[pygame.K_RIGHT]
-
-        if left_pressed and not self.left_pressed_last:
-
-            self.turret_index -= 1
-            self.turret_index %= 8
-
-        if right_pressed and not self.right_pressed_last:
-
-            self.turret_index += 1
-            self.turret_index %= 8
-
-        self.left_pressed_last = left_pressed
-        self.right_pressed_last = right_pressed
-
-    # =====================================================
     # PARTICLES
     # =====================================================
 
@@ -563,22 +457,6 @@ class Tank:
     # =====================================================
     # FIRING
     # =====================================================
-
-    def update_firing(self, dt):
-
-        self.fire_timer -= dt
-
-        keys = pygame.key.get_pressed()
-
-        if not keys[pygame.K_SPACE]:
-            return
-
-        if self.fire_timer > 0:
-            return
-
-        self.fire_timer = self.fire_cooldown
-
-        self.fire_shell()
 
     def fire_shell(self):
 
