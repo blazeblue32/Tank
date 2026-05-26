@@ -2,6 +2,84 @@ import random
 
 from core.constants import *
 
+def grow_forest_patch(
+    tiles,
+    start_x,
+    start_y,
+    size
+):
+
+    frontier = [
+        (start_x, start_y)
+    ]
+
+    visited = set()
+
+    while frontier:
+
+        x, y = frontier.pop(0)
+
+        if (x, y) in visited:
+            continue
+
+        visited.add((x, y))
+
+        if (
+            x < 0 or
+            y < 0 or
+            x >= MAP_WIDTH or
+            y >= MAP_HEIGHT
+        ):
+            continue
+
+        # =====================================
+        # PLACE FOREST
+        # =====================================
+
+        tiles[y][x] = TERRAIN_FOREST
+
+        # =====================================
+        # PATCH GROWTH
+        # =====================================
+
+        for dx, dy in [
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+            (1, 1)
+        ]:
+
+            nx = x + dx
+            ny = y + dy
+
+            if (nx, ny) in visited:
+                continue
+
+            # ================================
+            # DISTANCE DECAY
+            # ================================
+
+            distance = (
+                abs(nx - start_x) +
+                abs(ny - start_y)
+            )
+
+            growth_chance = max(
+                0.15,
+                1.0 -
+                (distance / size)
+            )
+
+            if random.random() < growth_chance:
+
+                frontier.append(
+                    (nx, ny)
+                )
+
 def generate_map():
 
     tiles = []
@@ -16,15 +94,42 @@ def generate_map():
 
             r = random.random()
 
-            if r < 0.08:
-                terrain = TERRAIN_FOREST
-
-            elif r < 0.12:
+            if r < 0.04:
                 terrain = TERRAIN_MUD
 
             row.append(terrain)
 
         tiles.append(row)
+
+    # =============================================
+    # FOREST PATCHES
+    # =============================================
+
+    forest_patches = 16
+
+    for _ in range(forest_patches):
+
+        start_x = random.randint(
+            0,
+            MAP_WIDTH - 1
+        )
+
+        start_y = random.randint(
+            0,
+            MAP_HEIGHT - 1
+        )
+
+        size = random.randint(
+            6,
+            14
+        )
+
+        grow_forest_patch(
+            tiles,
+            start_x,
+            start_y,
+            size
+        )
 
     # =====================================================
     # River
@@ -80,3 +185,4 @@ def generate_map():
             })
 
     return tiles, bridges
+    

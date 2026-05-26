@@ -20,8 +20,8 @@ class TankBase:
         # POSITION
         # =================================================
 
-        self.tile_x = 10
-        self.tile_y = 10
+        self.tile_x = 16
+        self.tile_y = 16
 
         self.x = self.tile_x * TILE_SIZE
         self.y = self.tile_y * TILE_SIZE
@@ -118,7 +118,7 @@ class TankBase:
         # DETECTION
         # =================================================        
         
-        self.view_range = 220
+        self.view_range = 32
 
     # =====================================================
     # UPDATE

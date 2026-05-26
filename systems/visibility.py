@@ -38,32 +38,184 @@ def directional_vision_modifier(
         facing_angle
     )
 
-    # ================================================
-    # SMOOTH FALLOFF
-    # ================================================
+    # ============================================
+    # ANGLE DIFFERENCE
+    # ============================================
 
-    modifier = math.cos(
-        math.radians(difference)
+    angle_diff = abs(
+        observer_angle -
+        target_angle
     )
 
-    # ================================================
-    # NORMALIZE
-    # ================================================
+    if angle_diff > 180:
 
-    modifier = (
-        modifier + 1.0
-    ) / 2.0
+        angle_diff = 360 - angle_diff
 
-    # ================================================
-    # MINIMUM AWARENESS
-    # ================================================
+    # ============================================
+    # DIRECTIONAL AWARENESS
+    # ============================================
 
-    modifier = max(
-        0.45,
-        modifier
+    # FRONT ARC
+    if angle_diff <= 45:
+
+        return 2.0
+
+    # SIDE ARC
+    elif angle_diff <= 135:
+
+        return 1.0
+
+    # REAR ARC
+    else:
+
+        return 0.75
+
+# =====================================================
+# RAYCAST VISIBILITY
+# =====================================================
+
+def raycast_visibility_strength(
+    observer,
+    target_tile_x,
+    target_tile_y
+):
+
+    start_x = (
+        observer.tile_x +
+        0.5
     )
 
-    return modifier
+    start_y = (
+        observer.tile_y +
+        0.5
+    )
+
+    end_x = (
+        target_tile_x +
+        0.5
+    )
+
+    end_y = (
+        target_tile_y +
+        0.5
+    )
+
+    dx = end_x - start_x
+    dy = end_y - start_y
+
+    distance = math.sqrt(
+        dx * dx +
+        dy * dy
+    )
+
+    # ============================================
+    # ZERO DISTANCE
+    # ============================================
+
+    if distance <= 0.01:
+
+        return 1.0
+
+    # ============================================
+    # SUB-TILE RAY STEPS
+    # ============================================
+
+    steps = max(
+        1,
+        int(distance * 4)
+    )
+
+    step_x = dx / steps
+    step_y = dy / steps
+
+    visibility = 1.0
+
+    visited_tiles = set()
+
+    current_x = start_x
+    current_y = start_y
+
+    for i in range(steps):
+
+        current_x += step_x
+        current_y += step_y
+
+        tile_x = int(current_x)
+        tile_y = int(current_y)
+
+        # ========================================
+        # MAP BOUNDS
+        # ========================================
+
+        if (
+            tile_x < 0 or
+            tile_y < 0 or
+            tile_x >= MAP_WIDTH or
+            tile_y >= MAP_HEIGHT
+        ):
+
+            return 0.0
+
+        if (
+            tile_x,
+            tile_y
+        ) in visited_tiles:
+
+            continue
+
+        visited_tiles.add(
+            (
+                tile_x,
+                tile_y
+            )
+        )
+        
+        tile = observer.tilemap.get_tile(
+            tile_x,
+            tile_y
+        )
+
+        obstruction = terrain_obstruction(
+            tile
+        )
+
+        distance_fraction = (
+            i / steps
+        )
+
+        # ========================================
+        # SOFT DISTANCE WEIGHTING
+        # ========================================
+
+        weighted_obstruction = (
+            obstruction *
+            (distance_fraction * 0.35)
+        )
+
+        # ========================================
+        # SOFT ATTENUATION
+        # ========================================
+
+        visibility -= (
+            weighted_obstruction *
+            (
+                1.0 +
+                ((1.0 - visibility) * 1.5)
+            )
+        )
+
+        # ========================================
+        # VISIBILITY COLLAPSE
+        # ========================================
+
+        if visibility <= 0.15:
+
+            return 0.0
+
+    return max(
+        0.0,
+        min(1.0, visibility)
+    )
 
 def visibility_strength_between(
     observer,
@@ -120,7 +272,10 @@ def visibility_strength_between(
         direction_modifier
     )
 
-    effective_range = observer.view_range
+    effective_range = (
+        observer.view_range *
+        direction_modifier
+    )
 
     # ============================================
     # RANGE FAILURE
@@ -134,7 +289,7 @@ def visibility_strength_between(
     # BASE VISIBILITY
     # ============================================
 
-    visibility = direction_modifier
+    visibility = 1.0
 
     # ============================================
     # DISTANCE ATTENUATION
@@ -146,149 +301,19 @@ def visibility_strength_between(
     )
 
     # ============================================
-    # PROPAGATED OBSTRUCTION
+    # RAYCAST VISIBILITY
     # ============================================
 
-    obstruction_visibility = (
-        propagated_visibility(
-            observer.tilemap,
-            observer.tile_x,
-            observer.tile_y,
-            target_tile_x,
-            target_tile_y
-        )
+    visibility *= raycast_visibility_strength(
+        observer,
+        target_tile_x,
+        target_tile_y
     )
-
-    visibility *= obstruction_visibility
 
     return max(
         0.0,
         min(1.0, visibility)
     )
-
-# =====================================================
-# OBSTRUCTION TRACE
-# =====================================================
-
-def propagated_visibility(
-    tilemap,
-    x1,
-    y1,
-    x2,
-    y2
-):
-
-    dx = abs(x2 - x1)
-    dy = abs(y2 - y1)
-
-    x = x1
-    y = y1
-
-    sx = 1 if x1 < x2 else -1
-    sy = 1 if y1 < y2 else -1
-
-    visibility = 1.0
-    
-    x += sx
-    y += sy
-
-    # =============================================
-    # BRESENHAM TRACE
-    # =============================================
-
-    if dx > dy:
-
-        err = dx / 2.0
-
-        while x != x2:
-
-            # =====================================
-            # MAP BOUNDS
-            # =====================================
-
-            if (
-                x < 0 or
-                y < 0 or
-                x >= MAP_WIDTH or
-                y >= MAP_HEIGHT
-            ):
-
-                return 0.0
-
-            tile = tilemap.get_tile(x, y)
-
-            obstruction = terrain_obstruction(
-                tile
-            )
-
-            visibility *= (
-                1.0 - (obstruction * 0.75)
-            )
-
-            # =====================================
-            # VISIBILITY COLLAPSE
-            # =====================================
-
-            if visibility <= 0.15:
-
-                return 0.0
-
-            err -= dy
-
-            if err < 0:
-
-                y += sy
-                err += dx
-
-            x += sx
-
-    else:
-
-        err = dy / 2.0
-
-        while y != y2:
-
-            # =====================================
-            # MAP BOUNDS
-            # =====================================
-
-            if (
-                x < 0 or
-                y < 0 or
-                x >= MAP_WIDTH or
-                y >= MAP_HEIGHT
-            ):
-
-                return 0.0
-
-            tile = tilemap.get_tile(x, y)
-
-            obstruction = terrain_obstruction(
-                tile
-            )
-
-            visibility *= (
-                1.0 - obstruction
-            )
-
-            # =====================================
-            # VISIBILITY COLLAPSE
-            # =====================================
-
-            if visibility <= 0.15:
-
-                return 0.0
-
-            err -= dx
-
-            if err < 0:
-
-                x += sx
-                err += dy
-
-            y += sy
-
-    return visibility
    
 # =====================================================
 # VISIBILITY
@@ -305,7 +330,7 @@ def can_see(
         target.tile_y
     )
 
-    return visibility > 0.15
+    return visibility >= 0.15
     
 def can_see_tile(
     observer,
@@ -319,4 +344,4 @@ def can_see_tile(
         tile_y
     )
 
-    return visibility > 0.15
+    return visibility >= 0.15

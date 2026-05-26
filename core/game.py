@@ -145,6 +145,20 @@ class Game:
                 enemy
             )
 
+            # =============================================
+            # FOW AUTHORITATIVE VISIBILITY
+            # =============================================
+
+            visible = (
+
+                visible and
+
+                self.fow.is_visible(
+                    enemy.tile_x,
+                    enemy.tile_y
+                )
+            )
+
             self.player_awareness.update_contact(
                 enemy,
                 visible,
@@ -193,8 +207,8 @@ class Game:
                 )
 
                 if distance > (
-                    reveal_radius *
-                    reveal_radius
+                    self.player.view_range *
+                    self.player.view_range
                 ):
                     continue
 

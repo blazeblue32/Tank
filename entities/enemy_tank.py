@@ -87,13 +87,6 @@ class EnemyTank(TankBase):
                 dt,
                 player
             )
-
-        self.update_particles(dt)
-
-        self.update_projectiles(
-            dt,
-            [player]
-        )
         
     def distance_to_player(
         self,
