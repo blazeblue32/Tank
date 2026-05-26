@@ -552,15 +552,19 @@ class TankBase:
     ):
 
         angle_to_front = {
-
-            NORTH: 270,
-            EAST: 0,
-            SOUTH: 90,
-            WEST: 180,
+        
+            "E": 0,
+            "SE": 45,
+            "S": 90,
+            "SW": 135,
+            "W": 180,
+            "NW": 225,
+            "N": 270,
+            "NE": 315,
         }
 
         front_angle = angle_to_front[
-            self.hull_facing
+            self.visual_facing
         ]
 
         relative = (

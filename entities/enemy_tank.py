@@ -89,7 +89,12 @@ class EnemyTank(TankBase):
             dy * dy
         )
 
-        return distance <= self.detection_range
+        if distance <= 48:
+            return True
+        
+        return distance <= self.get_detection_range(
+            player
+        )
         
     def distance_to_player(
         self,
@@ -103,6 +108,28 @@ class EnemyTank(TankBase):
             dx * dx +
             dy * dy
         )
+    
+    def get_detection_range(
+        self,
+        player
+    ):
+
+        tile = self.tilemap.get_tile(
+            player.tile_x,
+            player.tile_y
+        )
+
+        detection = self.detection_range
+
+        # ================================================
+        # FOREST CONCEALMENT
+        # ================================================
+
+        if tile == TERRAIN_FOREST:
+
+            detection *= 0.5
+
+        return detection
     
     # =====================================================
     # AIM
