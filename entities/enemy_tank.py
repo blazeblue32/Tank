@@ -3,6 +3,7 @@ import math
 
 from core.constants import *
 from entities.tank_base import TankBase
+from systems.movement import *
 
 class EnemyTank(TankBase):
 
@@ -15,11 +16,11 @@ class EnemyTank(TankBase):
 
         super().__init__(tilemap)
 
-        self.x = x
-        self.y = y
-
         self.tile_x = x // TILE_SIZE
         self.tile_y = y // TILE_SIZE
+
+        self.x = self.tile_x * TILE_SIZE
+        self.y = self.tile_y * TILE_SIZE
         
         # =================================================
         # AI
@@ -28,9 +29,13 @@ class EnemyTank(TankBase):
         self.detection_range = 220
 
         self.reload_timer = 0
-        self.reload_time = 1.8
+        
+        self.reload_time = 2.5
+        
+        self.preferred_range = 96
 
-    
+        self.minimum_range = 64
+
     # =====================================================
     # UPDATE
     # =====================================================
@@ -44,17 +49,23 @@ class EnemyTank(TankBase):
         if not self.alive:
             return
 
+        self.update_turning(dt)
+
+        if self.moving:
+            self.update_movement(dt)
+
         if not self.can_see_player(player):
             return
 
-        self.aim_turret_at_player(
-            player
-        )
+        self.update_hull_rotation(player)
 
-        self.try_fire_at_player(
-            dt,
-            player
-        )
+        self.update_movement_ai(player)
+
+        self.aim_turret_at_player(player)
+
+        self.try_fire_at_player(dt, player)
+
+        self.update_particles(dt)
 
         self.update_projectiles(
             dt,
@@ -79,6 +90,19 @@ class EnemyTank(TankBase):
         )
 
         return distance <= self.detection_range
+        
+    def distance_to_player(
+        self,
+        player
+    ):
+
+        dx = player.x - self.x
+        dy = player.y - self.y
+
+        return math.sqrt(
+            dx * dx +
+            dy * dy
+        )
     
     # =====================================================
     # AIM
@@ -118,6 +142,57 @@ class EnemyTank(TankBase):
         self.turret_index = closest_index
     
     # =====================================================
+    # HULL AIM
+    # =====================================================
+
+    def get_direction_to_player(
+        self,
+        player
+    ):
+
+        dx = player.x - self.x
+        dy = player.y - self.y
+
+        # ================================================
+        # CARDINAL PRIORITY
+        # ================================================
+
+        if abs(dx) > abs(dy):
+
+            if dx > 0:
+                return EAST
+            else:
+                return WEST
+
+        else:
+
+            if dy > 0:
+                return SOUTH
+            else:
+                return NORTH
+    
+    # =====================================================
+    # HULL CONTROL
+    # =====================================================
+
+    def update_hull_rotation(
+        self,
+        player
+    ):
+
+        if self.turning:
+            return
+
+        desired = self.get_direction_to_player(
+            player
+        )
+
+        if desired == self.hull_facing:
+            return
+
+        self.begin_turn(desired)
+    
+    # =====================================================
     # FIRE CONTROL
     # =====================================================
 
@@ -135,6 +210,67 @@ class EnemyTank(TankBase):
         self.reload_timer = self.reload_time
 
         self.fire_shell()
+    
+    # =====================================================
+    # MOVEMENT AI
+    # =====================================================
+
+    def update_movement_ai(
+        self,
+        player
+    ):
+
+        if self.turning:
+            return
+
+        if self.moving:
+            return
+
+        desired = self.get_direction_to_player(
+            player
+        )
+
+        distance = self.distance_to_player(
+            player
+        )
+
+        # ================================================
+        # TOO FAR
+        # ================================================
+
+        if distance > self.preferred_range:
+
+            if desired != self.hull_facing:
+
+                self.begin_turn(desired)
+                return
+
+            self.try_begin_move(
+                self.hull_facing,
+                reverse=False
+            )
+
+            return
+
+        # ================================================
+        # TOO CLOSE
+        # ================================================
+
+        if distance < self.minimum_range:
+
+            if desired != self.hull_facing:
+
+                self.begin_turn(desired)
+                return
+
+            reverse_direction = opposite_direction(
+                self.hull_facing
+            )
+
+            self.try_begin_move(
+                reverse_direction,
+                reverse=True
+            )
     
     # =====================================================
     # DRAW

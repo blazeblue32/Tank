@@ -90,7 +90,7 @@ class TankBase:
 
         self.projectiles = []
 
-        self.fire_cooldown = 0.6
+        self.fire_cooldown = 2.5
 
         self.fire_timer = 0
         
