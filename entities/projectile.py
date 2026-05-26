@@ -3,11 +3,8 @@ import random
 
 from core.constants import *
 from world.terrain import *
-
-from entities.particle import (
-    ImpactParticle,
-    ImpactFlash
-)
+from entities.particle import ImpactParticle, ImpactFlash
+from systems.visibility import can_see, visibility_strength_between
 
 class Projectile:
 
@@ -169,9 +166,9 @@ class Projectile:
         # CONCEALMENT
         # =================================================
 
-        concealment_density = 0
-
-        terrain_obstruction(terrain)
+        concealment_density = (
+            terrain_obstruction(terrain)
+        )
 
         # =================================================
         # OBSTRUCTION
@@ -251,18 +248,19 @@ class Projectile:
                 self.angle + 180
             ) % 360
 
-            obstruction = (
-                self.tilemap.calculate_obstruction_between(
-                    self.owner.tile_x,
-                    self.owner.tile_y,
-                    tank.tile_x,
-                    tank.tile_y
-                )
+            visibility = visibility_strength_between(
+                self.owner,
+                tank.tile_x,
+                tank.tile_y
             )
 
-            miss_chance = min(
-                obstruction * 0.15,
-                0.75
+            hit_chance = max(
+                0.15,
+                visibility
+            )
+
+            miss_chance = (
+                1.0 - hit_chance
             )
 
             if random.random() < miss_chance:

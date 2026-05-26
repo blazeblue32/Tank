@@ -8,7 +8,9 @@ from entities.player_tank import PlayerTank
 from entities.enemy_tank import EnemyTank
 from rendering.renderer import Renderer
 from systems.movement import update_input_state
-from systems.visibility import can_see
+from systems.visibility import can_see, can_see_tile
+from systems.awareness import AwarenessSystem
+from systems.fow import FOWSystem
 
 class Game:
 
@@ -70,6 +72,21 @@ class Game:
         # =================================================
 
         self.renderer = Renderer()
+        
+        # =================================================
+        # AWARENESS
+        # =================================================
+
+        self.player_awareness = AwarenessSystem()
+        
+        # =================================================
+        # FOG OF WAR
+        # =================================================
+
+        self.fow = FOWSystem(
+            MAP_WIDTH,
+            MAP_HEIGHT
+        )
 
     # =====================================================
     # RUN
@@ -116,12 +133,82 @@ class Game:
                 dt,
                 self.player
             )
+            
+        current_time = (
+            pygame.time.get_ticks() / 1000.0
+        )
+
+        for enemy in self.enemy_tanks:
+
+            visible = can_see(
+                self.player,
+                enemy
+            )
+
+            self.player_awareness.update_contact(
+                enemy,
+                visible,
+                current_time
+            )
+
+        self.player_awareness.cleanup_contacts(
+            current_time
+        )
+
+        self.update_fow()
 
         self.camera.update(
             self.player.x,
             self.player.y
         )
 
+    # =====================================================
+    # UPDATE FOG OF WAR
+    # =====================================================
+
+    def update_fow(self):
+
+        self.fow.clear_visible()
+        
+        self.fow.reveal_tile(
+            self.player.tile_x,
+            self.player.tile_y
+        )
+
+        reveal_radius = 14
+
+        px = self.player.tile_x
+        py = self.player.tile_y
+
+        for y in range(MAP_HEIGHT):
+
+            for x in range(MAP_WIDTH):
+
+                dx = x - px
+                dy = y - py
+
+                distance = (
+                    dx * dx +
+                    dy * dy
+                )
+
+                if distance > (
+                    reveal_radius *
+                    reveal_radius
+                ):
+                    continue
+
+                if can_see_tile(
+                    self.player,
+                    x,
+                    y
+                ):
+
+                    self.fow.reveal_tile(
+                        x,
+                        y
+                    )
+    
     # =====================================================
     # DRAW
     # =====================================================
@@ -133,17 +220,49 @@ class Game:
         self.renderer.draw_map(
             self.screen,
             self.tilemap,
-            self.camera
+            self.camera,
+            self.fow
         )
 
+        # =================================================
+        # PROJECTILES + EFFECTS
+        # =================================================
+
+        all_tanks = (
+            [self.player] +
+            self.enemy_tanks
+        )
+
+        for tank in all_tanks:
+
+            for projectile in tank.projectiles:
+                projectile.draw(
+                    self.screen,
+                    self.camera
+                )
+
+            for particle in tank.particles:
+                particle.draw(
+                    self.screen,
+                    self.camera
+                )
+        
+        # =================================================
+        # OBJECTS
+        # =================================================        
+        
         self.player.draw(
             self.screen,
             self.camera
         )
         
         for enemy in self.enemy_tanks:
-            if can_see(
-                self.player,
+
+            # =============================================
+            # CURRENTLY VISIBLE
+            # =============================================
+
+            if self.player_awareness.target_visible(
                 enemy
             ):
 
@@ -151,5 +270,45 @@ class Game:
                     self.screen,
                     self.camera
                 )
+
+            # =============================================
+            # LAST KNOWN POSITION
+            # =============================================
+
+            elif self.player_awareness.knows_target(
+                enemy
+            ):
+
+                last_known = (
+                    self.player_awareness
+                    .get_last_known_position(enemy)
+                )
+
+                if last_known:
+
+                    lx, ly = last_known
+
+                    screen_x = (
+                        lx +
+                        TILE_SIZE // 2 -
+                        self.camera.x
+                    )
+
+                    screen_y = (
+                        ly +
+                        TILE_SIZE // 2 -
+                        self.camera.y
+                    )
+
+                    pygame.draw.circle(
+                        self.screen,
+                        (70, 70, 70),
+                        (
+                            int(screen_x),
+                            int(screen_y)
+                        ),
+                        12,
+                        2
+                    )
 
         pygame.display.flip()

@@ -64,6 +64,27 @@ TERRAIN_TYPES = {
 
         "craterable": True,
     },
+    
+    TERRAIN_ROAD: {
+
+        "name": "Road",
+
+        "color": (120, 104, 84),
+
+        "type": TERRAIN_TYPE_LAND,
+
+        "speed": 1.25,
+
+        "passable": True,
+
+        "concealment": 0.0,
+
+        "obstruction": 0.0,
+
+        "vision_block": 0.0,
+
+        "craterable": False,
+    },
 
     TERRAIN_WATER: {
 

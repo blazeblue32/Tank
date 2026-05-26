@@ -118,7 +118,7 @@ class TankBase:
         # DETECTION
         # =================================================        
         
-        self.detection_range = 220
+        self.view_range = 220
 
     # =====================================================
     # UPDATE
@@ -632,12 +632,6 @@ class TankBase:
     # =====================================================
 
     def draw(self, surface, camera):
-
-        for projectile in self.projectiles:
-            projectile.draw(surface, camera)
-        
-        for particle in self.particles:
-            particle.draw(surface, camera)
             
         screen_x, screen_y = camera.apply(self.x, self.y)
 

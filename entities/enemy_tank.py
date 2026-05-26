@@ -4,7 +4,6 @@ import math
 from core.constants import *
 from entities.tank_base import TankBase
 from systems.movement import *
-from world.terrain import *
 from systems.visibility import *
 
 class EnemyTank(TankBase):
@@ -95,10 +94,6 @@ class EnemyTank(TankBase):
             dt,
             [player]
         )
-    
-    # =====================================================
-    # DETECTION
-    # =====================================================
         
     def distance_to_player(
         self,
@@ -112,32 +107,6 @@ class EnemyTank(TankBase):
             dx * dx +
             dy * dy
         )
-    
-    def get_detection_range(
-        self,
-        player
-    ):
-
-        tile = self.tilemap.get_tile(
-            player.tile_x,
-            player.tile_y
-        )
-
-        detection = self.detection_range
-
-        # ================================================
-        # FOREST CONCEALMENT
-        # ================================================
-
-        concealment = terrain_concealment(
-            tile
-        )
-
-        detection *= (
-            1.0 - concealment
-        )
-
-        return detection
     
     # =====================================================
     # AIM

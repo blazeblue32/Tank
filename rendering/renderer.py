@@ -5,7 +5,13 @@ from world.terrain import *
 
 class Renderer:
 
-    def draw_map(self, surface, tilemap, camera):
+    def draw_map(
+        self,
+        surface,
+        tilemap,
+        camera,
+        fow
+    ):
 
         visible_tiles_x = SCREEN_WIDTH // TILE_SIZE + 2
         visible_tiles_y = SCREEN_HEIGHT // TILE_SIZE + 2
@@ -27,6 +33,32 @@ class Renderer:
                     continue
 
                 color = terrain_color(tile)
+                
+                visibility = fow.get_visibility(
+                    x,
+                    y
+                )
+                
+                # =====================================
+                # FOG OF WAR SHADING
+                # =====================================
+
+                # =====================================
+                # FOG OF WAR SHADING
+                # =====================================
+
+                if visibility == 0:
+
+                    color = (0, 0, 0)
+
+                elif visibility == 1:
+
+                    color = (
+
+                        int(color[0] * 0.45),
+                        int(color[1] * 0.45),
+                        int(color[2] * 0.45)
+                    )
 
                 screen_x, screen_y = camera.apply(
                     x * TILE_SIZE,
