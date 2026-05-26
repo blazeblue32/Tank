@@ -99,13 +99,17 @@ class TankBase:
         # =================================================
 
         self.alive = True
+
+        self.destroyed = False
         
         # =================================================
         # ARMOR
         # =================================================
 
         self.front_armor = 3
+        
         self.side_armor = 2
+        
         self.rear_armor = 1
 
     # =====================================================
@@ -340,6 +344,24 @@ class TankBase:
         new_y = self.tile_y + dy
 
         terrain = self.tilemap.get_tile(new_x, new_y)
+
+        # ================================================
+        # WRECK BLOCKING
+        # ================================================
+
+        for wreck in getattr(
+            self.tilemap,
+            "wrecks",
+            []
+        ):
+
+            if (
+                wreck.tile_x == new_x
+                and
+                wreck.tile_y == new_y
+            ):
+
+                return
 
         if terrain is None:
             return
@@ -594,16 +616,14 @@ class TankBase:
         if penetration >= armor:
 
             self.alive = False
+            
+            self.destroyed = True
+            
+            if self not in self.tilemap.wrecks:
 
-            print(
-                f"PENETRATION: {zone}"
-            )
-
-        else:
-
-            print(
-                f"BOUNCE: {zone}"
-            )
+                self.tilemap.wrecks.append(
+                    self
+                )
 
         return penetration >= armor
     
@@ -618,8 +638,102 @@ class TankBase:
         
         for particle in self.particles:
             particle.draw(surface, camera)
-
+            
         screen_x, screen_y = camera.apply(self.x, self.y)
+
+        # =================================================
+        # DESTROYED / WRECK
+        # =================================================
+
+        if self.destroyed:
+
+            screen_x, screen_y = camera.apply(
+                self.x,
+                self.y
+            )
+
+            wreck_surface = pygame.Surface(
+                (16, 16),
+                pygame.SRCALPHA
+            )
+
+            # =============================================
+            # BURNT HULL
+            # =============================================
+
+            pygame.draw.rect(
+                wreck_surface,
+                (45, 45, 45),
+                (1, 3, 14, 10)
+            )
+
+            # =============================================
+            # INNER DAMAGE
+            # =============================================
+
+            pygame.draw.rect(
+                wreck_surface,
+                (25, 25, 25),
+                (4, 4, 8, 8)
+            )
+
+            # =============================================
+            # TRACKS
+            # =============================================
+
+            pygame.draw.rect(
+                wreck_surface,
+                (20, 20, 20),
+                (1, 1, 14, 2)
+            )
+
+            pygame.draw.rect(
+                wreck_surface,
+                (20, 20, 20),
+                (1, 13, 14, 2)
+            )
+
+            # =============================================
+            # DAMAGED TURRET
+            # =============================================
+
+            pygame.draw.circle(
+                wreck_surface,
+                (35, 35, 35),
+                (8, 8),
+                3
+            )
+
+            pygame.draw.line(
+                wreck_surface,
+                (15, 15, 15),
+                (8, 8),
+                (13, 5),
+                2
+            )
+
+            angle = VISUAL_ANGLES[
+                self.visual_facing
+            ]
+
+            rotated = pygame.transform.rotate(
+                wreck_surface,
+                -angle
+            )
+
+            rect = rotated.get_rect(
+                center=(
+                    screen_x + TILE_SIZE // 2,
+                    screen_y + TILE_SIZE // 2
+                )
+            )
+
+            surface.blit(
+                rotated,
+                rect
+            )
+
+            return
 
         # =================================================
         # HULL
@@ -634,8 +748,24 @@ class TankBase:
 
         pygame.draw.rect(
             hull_surface,
-            TANK_BODY,
-            (2, 2, TILE_SIZE - 4, TILE_SIZE - 4)
+            (110, 95, 75),
+            (1, 3, 14, 10)
+        )
+        
+        # =================================================
+        # TRACKS
+        # =================================================
+
+        pygame.draw.rect(
+            hull_surface,
+            (45, 45, 45),
+            (1, 1, 14, 2)
+        )
+
+        pygame.draw.rect(
+            hull_surface,
+            (45, 45, 45),
+            (1, 13, 14, 2)
         )
 
         # ================================================
@@ -645,7 +775,7 @@ class TankBase:
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (3, 5, 2, 6)
+            (2, 5, 2, 6)
         )
 
         # ================================================
@@ -655,13 +785,13 @@ class TankBase:
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (1, 3, 2, 2)
+            (0, 4, 2, 2)
         )
 
         pygame.draw.rect(
             hull_surface,
             BLACK,
-            (1, 11, 2, 2)
+            (0, 10, 2, 2)
         )
 
         rotated = pygame.transform.rotate(
@@ -682,31 +812,45 @@ class TankBase:
         # TURRET
         # =================================================
 
-        center_x = screen_x + TILE_SIZE // 2
-        center_y = screen_y + TILE_SIZE // 2
-
-        pygame.draw.circle(
-            surface,
-            TANK_TURRET,
-            (int(center_x), int(center_y)),
-            4
+        center_x = (
+            screen_x + TILE_SIZE // 2
         )
 
-        turret_angle = TURRET_DIRECTIONS[
+        center_y = (
+            screen_y + TILE_SIZE // 2
+        )
+
+        angle = TURRET_DIRECTIONS[
             self.turret_index
         ]
 
-        radians = math.radians(turret_angle)
+        radians = math.radians(angle)
 
-        barrel_length = 10
+        turret_length = 10
 
-        end_x = center_x + math.cos(radians) * barrel_length
-        end_y = center_y + math.sin(radians) * barrel_length
+        end_x = (
+            center_x +
+            math.cos(radians) *
+            turret_length
+        )
+
+        end_y = (
+            center_y +
+            math.sin(radians) *
+            turret_length
+        )
 
         pygame.draw.line(
             surface,
-            TANK_TURRET,
+            (60, 60, 60),
             (center_x, center_y),
             (end_x, end_y),
             2
+        )
+
+        pygame.draw.circle(
+            surface,
+            (90, 90, 90),
+            (center_x, center_y),
+            3
         )
