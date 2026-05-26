@@ -257,9 +257,13 @@ class Projectile:
             # HIT
             # =============================================
 
+            impact_angle = (
+                self.angle + 180
+            ) % 360
+
             penetrated = tank.take_hit(
                 self.penetration,
-                self.angle
+                impact_angle
             )
 
             self.create_tank_impact()
