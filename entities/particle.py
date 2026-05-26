@@ -70,41 +70,70 @@ class ImpactParticle:
         self.color = color
 
         self.life = lifetime
+        
+        self.size = random.uniform(2, 8)
+        
+        self.initial_life = lifetime
+        
+        self.initial_size = self.size
 
         angle = random.uniform(0, math.pi * 2)
 
-        velocity = random.uniform(
-            speed * 0.5,
+        speed = random.uniform(
+            speed * 0.35,
             speed
         )
 
-        self.vx = math.cos(angle) * velocity
-        self.vy = math.sin(angle) * velocity
+        self.vx = math.cos(angle) * speed
+        self.vy = math.sin(angle) * speed
 
     def update(self, dt):
-
-        self.life -= dt
 
         self.x += self.vx * dt
         self.y += self.vy * dt
 
-        self.vx *= 0.90
-        self.vy *= 0.90
+        # =============================================
+        # ARCADE DRAG
+        # =============================================
 
-    def draw(self, surface, camera):
+        self.vx *= 0.992
+        self.vy *= 0.992
+
+        self.life -= dt
+
+        # =============================================
+        # SIZE SHRINK
+        # =============================================
+
+        life_ratio = (
+            self.life /
+            self.initial_life
+        )
+
+        self.size = max(
+            1,
+            self.initial_size * life_ratio
+        )
+
+    def draw(
+        self,
+        surface,
+        camera
+    ):
 
         screen_x, screen_y = camera.apply(
             self.x,
             self.y
         )
 
-        surface.fill(
+        pygame.draw.rect(
+            surface,
             self.color,
             (
                 int(screen_x),
                 int(screen_y),
-                1,
-                1
+                self.size,
+                self.size
             )
         )
 

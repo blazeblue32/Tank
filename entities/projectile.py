@@ -82,7 +82,13 @@ class Projectile:
         # Hit Radius
         # =================================================
         
-        self.hit_radius = 6
+        self.hit_radius = 10
+        
+        # =================================================
+        # PENETRATION
+        # =================================================
+
+        self.penetration = 2
 
     # =====================================================
     # UPDATE
@@ -241,7 +247,10 @@ class Projectile:
             # HIT
             # =============================================
 
-            tank.take_hit()
+            penetrated = tank.take_hit(
+                self.penetration,
+                self.angle
+            )
 
             self.create_tank_impact()
 
@@ -276,8 +285,8 @@ class Projectile:
                 ImpactParticle(
                     self.x,
                     self.y,
-                    (255, 220, 140),
-                    0.18,
+                    (255, 220, 80),
+                    0.45,
                     100
                 )
             )
@@ -292,8 +301,8 @@ class Projectile:
                 ImpactParticle(
                     self.x,
                     self.y,
-                    (120, 120, 120),
-                    0.30,
+                    (80, 80, 80),
+                    0.90,
                     20
                 )
             )
@@ -357,8 +366,8 @@ class Projectile:
                 ImpactParticle(
                     self.x,
                     self.y,
-                    (80, 70, 60),
-                    0.30,
+                    (140, 90, 40),
+                    0.55,
                     50
                 )
             )
@@ -367,14 +376,14 @@ class Projectile:
         # SPARKS
         # =================================================
 
-        for _ in range(4):
+        for _ in range(8):
 
             self.impact_particles.append(
                 ImpactParticle(
                     self.x,
                     self.y,
-                    (255, 220, 120),
-                    0.12,
+                    (255, 220, 80),
+                    0.45,
                     80
                 )
             )
@@ -390,8 +399,8 @@ class Projectile:
                     self.x,
                     self.y,
                     (120, 120, 120),
-                    0.45,
-                    30
+                    1.8,
+                    10
                 )
             )
 
