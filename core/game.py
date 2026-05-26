@@ -111,7 +111,10 @@ class Game:
         )
 
         for enemy in self.enemy_tanks:
-            enemy.update(dt)
+            enemy.update(
+                dt,
+                self.player
+            )
 
         self.camera.update(
             self.player.x,
