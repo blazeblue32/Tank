@@ -559,18 +559,6 @@ class TankBase:
         projectile_angle
     ):
 
-        angle_to_front = {
-        
-            "E": 0,
-            "SE": 45,
-            "S": 90,
-            "SW": 135,
-            "W": 180,
-            "NW": 225,
-            "N": 270,
-            "NE": 315,
-        }
-
         front_angle = DIRECTION_ANGLES[
             self.hull_direction
         ]
@@ -725,7 +713,7 @@ class TankBase:
             )
 
             angle = DIRECTION_ANGLES[
-                self.turret_direction
+                self.visual_direction
             ]
 
             rotated = pygame.transform.rotate(
