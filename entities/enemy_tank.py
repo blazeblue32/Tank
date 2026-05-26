@@ -46,6 +46,21 @@ class EnemyTank(TankBase):
         player
     ):
 
+        # =================================================
+        # ALWAYS UPDATE EFFECTS
+        # =================================================
+
+        self.update_particles(dt)
+
+        self.update_projectiles(
+            dt,
+            [player]
+        )
+
+        # =================================================
+        # DESTROYED
+        # =================================================
+
         if not self.alive:
             return
 
@@ -91,10 +106,30 @@ class EnemyTank(TankBase):
 
         if distance <= 48:
             return True
+            
+        obstruction = (
+            self.tilemap.calculate_obstruction_between(
+                        self.tile_x,
+                        self.tile_y,
+                        player.tile_x,
+                        player.tile_y
+                    )
+                )
         
-        return distance <= self.get_detection_range(
+        detection_range = self.get_detection_range(
             player
         )
+
+        # ================================================
+        # OBSTRUCTION PENALTY
+        # ================================================
+
+        detection_range *= max(
+            0.2,
+            1.0 - (obstruction * 0.2)
+        )
+
+        return distance <= detection_range
         
     def distance_to_player(
         self,

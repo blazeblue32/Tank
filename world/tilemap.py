@@ -1,6 +1,6 @@
 import random
 
-from core.constants import TERRAIN_WATER
+from core.constants import *
 from world.mapgen import generate_map
 
 class TileMap:
@@ -185,3 +185,71 @@ class TileMap:
             (x, y),
             0
         )
+        
+    # =====================================================
+    # OBSTRUCTION TRACE
+    # =====================================================
+
+    def calculate_obstruction_between(
+        self,
+        x1,
+        y1,
+        x2,
+        y2
+    ):
+
+        obstruction = 0
+
+        dx = x2 - x1
+        dy = y2 - y1
+
+        steps = max(
+            abs(dx),
+            abs(dy)
+        )
+
+        if steps == 0:
+            return 0
+
+        step_x = dx / steps
+        step_y = dy / steps
+
+        current_x = x1
+        current_y = y1
+
+        for _ in range(int(steps)):
+
+            tile_x = int(current_x)
+            tile_y = int(current_y)
+
+            terrain = self.get_tile(
+                tile_x,
+                tile_y
+            )
+
+            # =============================================
+            # FOREST
+            # =============================================
+
+            if terrain == TERRAIN_FOREST:
+
+                obstruction += 1
+
+            # =============================================
+            # WRECKS
+            # =============================================
+
+            for wreck in self.wrecks:
+
+                if (
+                    wreck.tile_x == tile_x
+                    and
+                    wreck.tile_y == tile_y
+                ):
+
+                    obstruction += 1
+
+            current_x += step_x
+            current_y += step_y
+
+        return obstruction
