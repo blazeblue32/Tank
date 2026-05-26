@@ -521,6 +521,93 @@ class TankBase:
         ]
     
     # =====================================================
+    # ARMOR CHECK
+    # =====================================================
+
+    def get_hit_armor(
+        self,
+        projectile_angle
+    ):
+
+        angle_to_front = {
+
+            NORTH: 270,
+            EAST: 0,
+            SOUTH: 90,
+            WEST: 180,
+        }
+
+        front_angle = angle_to_front[
+            self.hull_facing
+        ]
+
+        relative = (
+            projectile_angle -
+            front_angle
+        ) % 360
+
+        # ================================================
+        # FRONT
+        # ================================================
+
+        if (
+            relative <= 30 or
+            relative >= 330
+        ):
+
+            return self.front_armor, "FRONT"
+
+        # ================================================
+        # REAR
+        # ================================================
+
+        if (
+            150 <= relative <= 210
+        ):
+
+            return self.rear_armor, "REAR"
+
+        # ================================================
+        # SIDE
+        # ================================================
+
+        return self.side_armor, "SIDE"
+    
+    # =====================================================
+    # HIT
+    # =====================================================
+
+    def take_hit(
+        self,
+        penetration,
+        projectile_angle
+    ):
+
+        armor, zone = self.get_hit_armor(
+            projectile_angle
+        )
+
+        # ================================================
+        # PENETRATION
+        # ================================================
+
+        if penetration >= armor:
+
+            self.alive = False
+
+            print(
+                f"PENETRATION: {zone}"
+            )
+
+        else:
+
+            print(
+                f"BOUNCE: {zone}"
+            )
+
+        return penetration >= armor
+    
+    # =====================================================
     # DRAW
     # =====================================================
 
