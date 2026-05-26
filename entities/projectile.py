@@ -2,6 +2,7 @@ import math
 import random
 
 from core.constants import *
+from world.terrain import *
 
 from entities.particle import (
     ImpactParticle,
@@ -63,6 +64,8 @@ class Projectile:
         # =================================================
 
         self.obstruction = 0
+        
+        self.missed_targets = set()
 
         # =================================================
         # EFFECTS
@@ -168,9 +171,7 @@ class Projectile:
 
         concealment_density = 0
 
-        if terrain == TERRAIN_FOREST:
-
-            concealment_density = 2.0
+        terrain_obstruction(terrain)
 
         # =================================================
         # OBSTRUCTION
@@ -194,20 +195,6 @@ class Projectile:
                 dt
             )
 
-            intercept_probability = (
-                1 - math.exp(
-                    -self.obstruction
-                )
-            )
-
-            if random.random() < intercept_probability:
-
-                self.create_impact()
-
-                self.dead = True
-
-                return
-
     # =====================================================
     # TANK COLLISION
     # =====================================================
@@ -226,6 +213,9 @@ class Projectile:
             # IGNORE OWNER
             # =============================================
 
+            if tank in self.missed_targets:
+                continue
+            
             if tank == self.owner:
                 continue
 
@@ -260,6 +250,32 @@ class Projectile:
             impact_angle = (
                 self.angle + 180
             ) % 360
+
+            obstruction = (
+                self.tilemap.calculate_obstruction_between(
+                    self.owner.tile_x,
+                    self.owner.tile_y,
+                    tank.tile_x,
+                    tank.tile_y
+                )
+            )
+
+            miss_chance = min(
+                obstruction * 0.15,
+                0.75
+            )
+
+            if random.random() < miss_chance:
+
+                tank.add_floating_text(
+                    "MISS"
+                )
+                
+                self.missed_targets.add(
+                    tank
+                )
+
+                continue
 
             penetrated = tank.take_hit(
                 self.penetration,

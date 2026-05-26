@@ -46,42 +46,8 @@ TERRAIN_ROAD = 2
 TERRAIN_MUD = 3
 TERRAIN_WATER = 4
 
-# =========================================================
-# TERRAIN DATA
-# =========================================================
-
-TERRAIN_DATA = {
-
-    TERRAIN_GRASS: {
-        "color": GRASS,
-        "speed": 1.0,
-        "passable": True,
-    },
-
-    TERRAIN_FOREST: {
-        "color": FOREST,
-        "speed": 0.7,
-        "passable": True,
-    },
-
-    TERRAIN_ROAD: {
-        "color": ROAD,
-        "speed": 1.35,
-        "passable": True,
-    },
-
-    TERRAIN_MUD: {
-        "color": MUD,
-        "speed": 0.45,
-        "passable": True,
-    },
-
-    TERRAIN_WATER: {
-        "color": WATER,
-        "speed": 0.0,
-        "passable": False,
-    },
-}
+TERRAIN_TYPE_LAND = 0
+TERRAIN_TYPE_WATER = 1
 
 # =========================================================
 # CARDINAL FACINGS

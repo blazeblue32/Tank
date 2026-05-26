@@ -13,6 +13,8 @@ class TankBase:
     def __init__(self, tilemap):
 
         self.tilemap = tilemap
+        
+        self.floating_texts = []
 
         # =================================================
         # POSITION
@@ -370,12 +372,14 @@ class TankBase:
         # BRIDGE OVERRIDE
         # ================================================
 
-        if terrain == TERRAIN_WATER:
+        if terrain_type(terrain) == TERRAIN_TYPE_WATER:
 
             if not self.tilemap.has_bridge(new_x, new_y):
                 return
 
-            speed_mod = TERRAIN_DATA[TERRAIN_ROAD]["speed"]
+            speed_mod = terrain_speed_modifier(
+                TERRAIN_ROAD
+            )
 
         else:
 
@@ -858,3 +862,88 @@ class TankBase:
             (center_x, center_y),
             3
         )
+        
+        # =====================================================
+        # FLOATING TEXT
+        # =====================================================
+        
+        font = pygame.font.SysFont(
+            None,
+            16
+        )
+
+        for text in self.floating_texts:
+
+            alpha = 255
+
+            if text["life"] < 1.0:
+
+                alpha = int(
+                    255 * text["life"]
+                )
+
+            surface_text = font.render(
+                text["text"],
+                True,
+                (255, 255, 255)
+            )
+
+            surface_text.set_alpha(alpha)
+
+            screen_x, screen_y = camera.apply(
+                text["x"],
+                text["y"]
+            )
+
+            surface.blit(
+                surface_text,
+                (
+                    screen_x - surface_text.get_width() // 2,
+                    screen_y
+                )
+            )
+        
+    # =====================================================
+    # FLOATING TEXT
+    # =====================================================
+
+    def add_floating_text(
+        self,
+        text
+    ):
+
+        self.floating_texts.append({
+
+            "text": text,
+
+            "x": self.x,
+
+            "y": self.y - 16,
+
+            "life": 3.0,
+        })
+        
+    def update_floating_texts(
+        self,
+        dt
+    ):
+
+        remaining = []
+
+        for text in self.floating_texts:
+
+            text["life"] -= dt
+
+            # =============================================
+            # RISE DURING FINAL SECOND
+            # =============================================
+
+            if text["life"] < 1.0:
+
+                text["y"] -= 18 * dt
+
+            if text["life"] > 0:
+
+                remaining.append(text)
+
+        self.floating_texts = remaining

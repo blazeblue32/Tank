@@ -1,6 +1,7 @@
 import pygame
 
 from core.constants import *
+from world.terrain import *
 
 class Renderer:
 
@@ -25,7 +26,7 @@ class Renderer:
                 if tile is None:
                     continue
 
-                color = TERRAIN_DATA[tile]["color"]
+                color = terrain_color(tile)
 
                 screen_x, screen_y = camera.apply(
                     x * TILE_SIZE,

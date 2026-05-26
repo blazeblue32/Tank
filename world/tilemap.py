@@ -2,6 +2,7 @@ import random
 
 from core.constants import *
 from world.mapgen import generate_map
+from world.terrain import *
 
 class TileMap:
 
@@ -124,8 +125,13 @@ class TileMap:
                 )
 
                 terrain = self.get_tile(x, y)
+                
+                if terrain is None:
+                    continue
 
-                if terrain == TERRAIN_WATER:
+                if not terrain_craterable(
+                    terrain
+                ):
                     continue
 
                 self.add_ground_damage(
@@ -186,9 +192,9 @@ class TileMap:
             0
         )
         
-    # =====================================================
-    # OBSTRUCTION TRACE
-    # =====================================================
+# =====================================================
+# OBSTRUCTION TRACE
+# =====================================================
 
     def calculate_obstruction_between(
         self,
@@ -198,7 +204,7 @@ class TileMap:
         y2
     ):
 
-        obstruction = 0
+        obstruction = 0.0
 
         dx = x2 - x1
         dy = y2 - y1
@@ -209,7 +215,7 @@ class TileMap:
         )
 
         if steps == 0:
-            return 0
+            return 0.0
 
         step_x = dx / steps
         step_y = dy / steps
@@ -227,13 +233,11 @@ class TileMap:
                 tile_y
             )
 
-            # =============================================
-            # FOREST
-            # =============================================
+            if terrain is not None:
 
-            if terrain == TERRAIN_FOREST:
-
-                obstruction += 1
+                obstruction += terrain_obstruction(
+                    terrain
+                )
 
             # =============================================
             # WRECKS
@@ -247,7 +251,7 @@ class TileMap:
                     wreck.tile_y == tile_y
                 ):
 
-                    obstruction += 1
+                    obstruction += 1.0
 
             current_x += step_x
             current_y += step_y

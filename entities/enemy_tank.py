@@ -4,6 +4,7 @@ import math
 from core.constants import *
 from entities.tank_base import TankBase
 from systems.movement import *
+from world.terrain import *
 
 class EnemyTank(TankBase):
 
@@ -46,16 +47,14 @@ class EnemyTank(TankBase):
         player
     ):
 
-        # =================================================
-        # ALWAYS UPDATE EFFECTS
-        # =================================================
-
         self.update_particles(dt)
 
         self.update_projectiles(
             dt,
             [player]
         )
+        
+        self.update_floating_texts(dt)
 
         # =================================================
         # DESTROYED
@@ -160,9 +159,13 @@ class EnemyTank(TankBase):
         # FOREST CONCEALMENT
         # ================================================
 
-        if tile == TERRAIN_FOREST:
+        concealment = terrain_concealment(
+            tile
+        )
 
-            detection *= 0.5
+        detection *= (
+            1.0 - concealment
+        )
 
         return detection
     

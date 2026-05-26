@@ -40,6 +40,8 @@ class PlayerTank(TankBase):
         )
 
         self.update_firing(dt)
+        
+        self.update_floating_texts(dt)
 
     # =====================================================
     # INPUT
