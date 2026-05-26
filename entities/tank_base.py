@@ -43,9 +43,9 @@ class TankBase:
         # HULL FACINGS
         # =================================================
 
-        self.hull_facing = EAST
-
-        self.visual_facing = "E"
+        self.hull_direction = "E"
+        
+        self.visual_direction = "E"
 
         # =================================================
         # TURNING
@@ -53,7 +53,7 @@ class TankBase:
 
         self.turning = False
 
-        self.turn_target = NORTH
+        self.turn_target = "N"
 
         self.turn_timer = 0
 
@@ -73,7 +73,7 @@ class TankBase:
         # TURRET
         # =================================================
 
-        self.turret_index = 0
+        self.turret_direction = "E"
 
         self.left_pressed_last = False
         self.right_pressed_last = False
@@ -113,6 +113,12 @@ class TankBase:
         self.side_armor = 2
         
         self.rear_armor = 1
+        
+        # =================================================
+        # DETECTION
+        # =================================================        
+        
+        self.detection_range = 220
 
     # =====================================================
     # UPDATE
@@ -192,16 +198,16 @@ class TankBase:
 
         held = False
 
-        if self.turn_hold_direction == NORTH:
+        if self.turn_hold_direction == "N":
             held = keys[pygame.K_w]
 
-        elif self.turn_hold_direction == EAST:
+        elif self.turn_hold_direction == "E":
             held = keys[pygame.K_d]
 
-        elif self.turn_hold_direction == SOUTH:
+        elif self.turn_hold_direction == "S":
             held = keys[pygame.K_s]
 
-        elif self.turn_hold_direction == WEST:
+        elif self.turn_hold_direction == "W":
             held = keys[pygame.K_a]
 
         self.turn_timer += dt
@@ -212,7 +218,7 @@ class TankBase:
 
         is_180 = (
             self.turn_target ==
-            opposite_direction(self.hull_facing)
+            opposite_direction(self.hull_direction)
         )
 
         if is_180:
@@ -233,11 +239,11 @@ class TankBase:
 
             if progress < 0.5:
 
-                self.visual_facing = self.get_diagonal_visual()
+                self.visual_direction = self.get_diagonal_visual()
 
             else:
 
-                self.visual_facing = self.get_cardinal_visual(
+                self.hull_direction = self.get_cardinal_visual(
                     self.turn_target
                 )
 
@@ -249,29 +255,29 @@ class TankBase:
 
             sequence_map = {
 
-                (NORTH, SOUTH): ["NW", "W", "SW"],
-                (SOUTH, NORTH): ["SE", "E", "NE"],
+                ("N", "S"): ["NW", "W", "SW"],
+                ("S", "N"): ["SE", "E", "NE"],
 
-                (EAST, WEST): ["NE", "N", "NW"],
-                (WEST, EAST): ["SW", "S", "SE"],
+                ("E", "W"): ["NE", "N", "NW"],
+                ("W", "E"): ["SW", "S", "SE"],
             }
 
             sequence = sequence_map.get(
-                (self.hull_facing, self.turn_target),
+                (self.hull_direction, self.turn_target),
                 ["NW", "W", "SW"]
             )
 
             if progress < 0.33:
 
-                self.visual_facing = sequence[0]
+                self.visual_direction = sequence[0]
 
             elif progress < 0.66:
 
-                self.visual_facing = sequence[1]
+                self.visual_direction = sequence[1]
 
             else:
 
-                self.visual_facing = sequence[2]
+                self.visual_direction = sequence[2]
 
         # ================================================
         # COMPLETE
@@ -281,44 +287,42 @@ class TankBase:
 
             self.turning = False
 
-            self.hull_facing = self.turn_target
+            self.hull_direction = self.turn_target
 
-            self.visual_facing = self.get_cardinal_visual(
-                self.hull_facing
-            )
+            self.visual_direction = self.turn_target
 
             if held:
 
                 self.try_begin_move(
-                    self.hull_facing,
+                    self.hull_direction,
                     reverse=False
                 )
 
     def get_diagonal_visual(self):
 
-        pair = (self.hull_facing, self.turn_target)
+        pair = (self.hull_direction, self.turn_target)
 
         mapping = {
 
-            (NORTH, EAST): "NE",
-            (EAST, SOUTH): "SE",
-            (SOUTH, WEST): "SW",
-            (WEST, NORTH): "NW",
+            ("N", "E"): "NE",
+            ("E", "S"): "SE",
+            ("S", "W"): "SW",
+            ("W", "N"): "NW",
 
-            (NORTH, WEST): "NW",
-            (WEST, SOUTH): "SW",
-            (SOUTH, EAST): "SE",
-            (EAST, NORTH): "NE",
+            ("N", "W"): "NW",
+            ("W", "S"): "SW",
+            ("S", "E"): "SE",
+            ("E", "N"): "NE",
 
             # ============================================
             # 180 TURNS
             # ============================================
 
-            (NORTH, SOUTH): "NE",
-            (SOUTH, NORTH): "SW",
+            ("N", "S"): "NE",
+            ("S", "N"): "SW",
 
-            (EAST, WEST): "SE",
-            (WEST, EAST): "NW",
+            ("E", "W"): "SE",
+            ("W", "E"): "NW",
         }
 
         return mapping.get(pair, "N")
@@ -326,10 +330,10 @@ class TankBase:
     def get_cardinal_visual(self, facing):
 
         mapping = {
-            NORTH: "N",
-            EAST: "E",
-            SOUTH: "S",
-            WEST: "W",
+            "N": "N",
+            "E": "E",
+            "S": "S",
+            "W": "W",
         }
 
         return mapping[facing]
@@ -459,7 +463,7 @@ class TankBase:
             "NW": [(14, 14), (10, 12)],
         }
 
-        offsets = rear_offsets[self.visual_facing]
+        offsets = rear_offsets[self.hull_direction]
 
         for ox, oy in offsets:
 
@@ -486,8 +490,8 @@ class TankBase:
 
     def fire_shell(self):
 
-        angle = TURRET_DIRECTIONS[
-            self.turret_index
+        angle = DIRECTION_ANGLES[
+            self.turret_direction
         ]
 
         radians = math.radians(angle)
@@ -567,8 +571,8 @@ class TankBase:
             "NE": 315,
         }
 
-        front_angle = angle_to_front[
-            self.visual_facing
+        front_angle = DIRECTION_ANGLES[
+            self.hull_direction
         ]
 
         relative = (
@@ -720,8 +724,8 @@ class TankBase:
                 2
             )
 
-            angle = VISUAL_ANGLES[
-                self.visual_facing
+            angle = DIRECTION_ANGLES[
+                self.turret_direction
             ]
 
             rotated = pygame.transform.rotate(
@@ -747,7 +751,7 @@ class TankBase:
         # HULL
         # =================================================
 
-        angle = VISUAL_ANGLES[self.visual_facing]
+        angle = DIRECTION_ANGLES[self.visual_direction]
 
         hull_surface = pygame.Surface(
             (TILE_SIZE, TILE_SIZE),
@@ -828,8 +832,8 @@ class TankBase:
             screen_y + TILE_SIZE // 2
         )
 
-        angle = TURRET_DIRECTIONS[
-            self.turret_index
+        angle = DIRECTION_ANGLES[
+            self.turret_direction
         ]
 
         radians = math.radians(angle)

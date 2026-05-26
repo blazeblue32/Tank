@@ -8,6 +8,7 @@ from entities.player_tank import PlayerTank
 from entities.enemy_tank import EnemyTank
 from rendering.renderer import Renderer
 from systems.movement import update_input_state
+from systems.visibility import can_see
 
 class Game:
 
@@ -141,9 +142,14 @@ class Game:
         )
         
         for enemy in self.enemy_tanks:
-            enemy.draw(
-                self.screen,
-                self.camera
-            )
+            if can_see(
+                self.player,
+                enemy
+            ):
+
+                enemy.draw(
+                    self.screen,
+                    self.camera
+                )
 
         pygame.display.flip()

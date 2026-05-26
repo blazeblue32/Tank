@@ -3,17 +3,17 @@ import pygame
 from core.constants import *
 
 DIRECTION_KEYS = {
-    pygame.K_w: NORTH,
-    pygame.K_d: EAST,
-    pygame.K_s: SOUTH,
-    pygame.K_a: WEST,
+    pygame.K_w: "N",
+    pygame.K_d: "E",
+    pygame.K_s: "S",
+    pygame.K_a: "W",
 }
 
 CARDINAL_VECTORS = {
-    NORTH: (0, -1),
-    EAST: (1, 0),
-    SOUTH: (0, 1),
-    WEST: (-1, 0),
+    "N": (0, -1),
+    "E": (1, 0),
+    "S": (0, 1),
+    "W": (-1, 0),
 }
 
 previous_keys = None
@@ -72,4 +72,14 @@ def get_held_direction():
 
 def opposite_direction(direction):
 
-    return (direction + 2) % 4
+    opposites = {
+
+        "N": "S",
+        "E": "W",
+        "S": "N",
+        "W": "E",
+    }
+
+    return opposites[
+        direction
+    ]

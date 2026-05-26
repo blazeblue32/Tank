@@ -5,6 +5,7 @@ from core.constants import *
 from entities.tank_base import TankBase
 from systems.movement import *
 from world.terrain import *
+from systems.visibility import *
 
 class EnemyTank(TankBase):
 
@@ -56,10 +57,6 @@ class EnemyTank(TankBase):
         
         self.update_floating_texts(dt)
 
-        # =================================================
-        # DESTROYED
-        # =================================================
-
         if not self.alive:
             return
 
@@ -68,16 +65,29 @@ class EnemyTank(TankBase):
         if self.moving:
             self.update_movement(dt)
 
-        if not self.can_see_player(player):
-            return
+        visible = can_see(
+            self,
+            player
+        )
 
-        self.update_hull_rotation(player)
+        if visible:
 
-        self.update_movement_ai(player)
+            self.update_hull_rotation(
+                player
+            )
 
-        self.aim_turret_at_player(player)
+            self.update_movement_ai(
+                player
+            )
 
-        self.try_fire_at_player(dt, player)
+            self.aim_turret_at_player(
+                player
+            )
+
+            self.try_fire_at_player(
+                dt,
+                player
+            )
 
         self.update_particles(dt)
 
@@ -89,46 +99,6 @@ class EnemyTank(TankBase):
     # =====================================================
     # DETECTION
     # =====================================================
-
-    def can_see_player(
-        self,
-        player
-    ):
-
-        dx = player.x - self.x
-        dy = player.y - self.y
-
-        distance = math.sqrt(
-            dx * dx +
-            dy * dy
-        )
-
-        if distance <= 48:
-            return True
-            
-        obstruction = (
-            self.tilemap.calculate_obstruction_between(
-                        self.tile_x,
-                        self.tile_y,
-                        player.tile_x,
-                        player.tile_y
-                    )
-                )
-        
-        detection_range = self.get_detection_range(
-            player
-        )
-
-        # ================================================
-        # OBSTRUCTION PENALTY
-        # ================================================
-
-        detection_range *= max(
-            0.2,
-            1.0 - (obstruction * 0.2)
-        )
-
-        return distance <= detection_range
         
     def distance_to_player(
         self,
@@ -191,12 +161,20 @@ class EnemyTank(TankBase):
         closest_index = 0
         closest_diff = 999
 
-        for i, turret_angle in enumerate(
-            TURRET_DIRECTIONS
+        for i, direction in enumerate(
+            DIRECTIONS
         ):
 
+            turret_angle = DIRECTION_ANGLES[
+                direction
+            ]
+
             diff = abs(
-                (angle - turret_angle + 180) % 360 - 180
+                (
+                    angle -
+                    turret_angle +
+                    180
+                ) % 360 - 180
             )
 
             if diff < closest_diff:
@@ -204,7 +182,11 @@ class EnemyTank(TankBase):
                 closest_diff = diff
                 closest_index = i
 
-        self.turret_index = closest_index
+        self.turret_direction = (
+            DIRECTIONS[
+                closest_index
+            ]
+        )
     
     # =====================================================
     # HULL AIM
@@ -225,16 +207,16 @@ class EnemyTank(TankBase):
         if abs(dx) > abs(dy):
 
             if dx > 0:
-                return EAST
+                return "E"
             else:
-                return WEST
+                return "W"
 
         else:
 
             if dy > 0:
-                return SOUTH
+                return "S"
             else:
-                return NORTH
+                return "N"
     
     # =====================================================
     # HULL CONTROL
@@ -252,7 +234,7 @@ class EnemyTank(TankBase):
             player
         )
 
-        if desired == self.hull_facing:
+        if desired == self.hull_direction:
             return
 
         self.begin_turn(desired)
@@ -305,13 +287,13 @@ class EnemyTank(TankBase):
 
         if distance > self.preferred_range:
 
-            if desired != self.hull_facing:
+            if desired != self.hull_direction:
 
                 self.begin_turn(desired)
                 return
 
             self.try_begin_move(
-                self.hull_facing,
+                self.hull_direction,
                 reverse=False
             )
 
@@ -323,13 +305,13 @@ class EnemyTank(TankBase):
 
         if distance < self.minimum_range:
 
-            if desired != self.hull_facing:
+            if desired != self.hull_direction:
 
                 self.begin_turn(desired)
                 return
 
             reverse_direction = opposite_direction(
-                self.hull_facing
+                self.hull_direction
             )
 
             self.try_begin_move(

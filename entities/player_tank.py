@@ -1,6 +1,7 @@
 from entities.tank_base import TankBase
 
 from systems.movement import *
+from core.constants import *
 
 import pygame
 
@@ -57,7 +58,7 @@ class PlayerTank(TankBase):
         # CONTINUOUS FORWARD MOVEMENT
         # ================================================
 
-        if held_direction == self.hull_facing:
+        if held_direction == self.hull_direction:
 
             self.clear_reverse_buffer()
 
@@ -74,7 +75,7 @@ class PlayerTank(TankBase):
 
         if (
             held_direction ==
-            opposite_direction(self.hull_facing)
+            opposite_direction(self.hull_direction)
             and
             just_pressed is None
             and
@@ -101,7 +102,7 @@ class PlayerTank(TankBase):
         # REVERSE / 180 TURN
         # ================================================
 
-        if direction == opposite_direction(self.hull_facing):
+        if direction == opposite_direction(self.hull_direction):
 
             if (
                 self.reverse_pending and
@@ -141,15 +142,33 @@ class PlayerTank(TankBase):
         left_pressed = keys[pygame.K_LEFT]
         right_pressed = keys[pygame.K_RIGHT]
 
+        current_index = (
+            DIRECTIONS.index(
+                self.turret_direction
+            )
+        )
+
         if left_pressed and not self.left_pressed_last:
 
-            self.turret_index -= 1
-            self.turret_index %= 8
+            current_index -= 1
+            current_index %= 8
+
+            self.turret_direction = (
+                DIRECTIONS[
+                    current_index
+                ]
+            )
 
         if right_pressed and not self.right_pressed_last:
 
-            self.turret_index += 1
-            self.turret_index %= 8
+            current_index += 1
+            current_index %= 8
+
+            self.turret_direction = (
+                DIRECTIONS[
+                    current_index
+                ]
+            )
 
         self.left_pressed_last = left_pressed
         self.right_pressed_last = right_pressed
